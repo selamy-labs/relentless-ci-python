@@ -1,8 +1,8 @@
 [cosmic-ray]
-module-path = "src/relentless_example"
+module-path = ["src/relentless_example", "quality"]
 timeout = 30.0
 excluded-modules = []
-test-command = "python -m pytest -x -q"
+test-command = "python -m pytest -x -q --color=no"
 
 [cosmic-ray.distributor]
 name = "local"

@@ -36,7 +36,7 @@ filterwarnings = ["error"]
 
 [tool.coverage.run]
 branch = true
-source = ["relentless_example"]
+source = ["relentless_example", "quality"]
 
 [tool.coverage.report]
 fail_under = 100
@@ -47,7 +47,7 @@ strict = true
 
 [tool.pyright]
 typeCheckingMode = "strict"
-include = ["src", "tests"]
+include = ["src", "tests", "quality"]
 
 [tool.ruff]
 target-version = "py311"
