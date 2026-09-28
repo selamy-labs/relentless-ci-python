@@ -16,7 +16,18 @@ relentless-example = "relentless_example.cli:main"
 packages = ["src/relentless_example"]
 
 [dependency-groups]
-dev = ["pytest>=8", "pytest-cov>=6", "hypothesis>=6", "black>=25", "ruff>=0.12", "mypy>=1.16", "pyright>=1.1", "complexipy>=4", "vulture>=2"]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=6",
+    "hypothesis>=6",
+    "black>=25",
+    "ruff>=0.12",
+    "mypy>=1.16",
+    "pyright>=1.1",
+    "complexipy>=4",
+    "vulture>=2",
+    "cosmic-ray>=8.7.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

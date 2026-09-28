@@ -39,6 +39,7 @@ def test_normalizes_ranges(value: object, expected: list[list[int]]) -> None:
         [["1", 2]],
         [[0, None]],
         [[0.5, 2]],
+        [[-0.5, 2]],
         [[0, float("inf")]],
         [[float("nan"), 2]],
         [[-1_000_001, 0]],
@@ -47,6 +48,14 @@ def test_normalizes_ranges(value: object, expected: list[list[int]]) -> None:
 )
 def test_rejects_invalid_ranges(value: object) -> None:
     with pytest.raises(ValueError):
+        normalize(value)
+
+
+@pytest.mark.parametrize("value", [[[]], [[1]], [[1, 2, 3]]])
+def test_invalid_pair_shape_has_actionable_error(value: object) -> None:
+    with pytest.raises(
+        ValueError, match="^each interval must contain exactly two endpoints$"
+    ):
         normalize(value)
 
 
