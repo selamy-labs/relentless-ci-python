@@ -1,0 +1,10 @@
+[
+  ["uv", "lock", "--check"],
+  ["black", "--check", "src", "tests", "quality"],
+  ["ruff", "check", "src", "tests", "quality"],
+  ["mypy", "src", "tests", "quality"],
+  ["pyright"],
+  ["vulture", "src", "tests", "quality"],
+  ["complexipy", "src", "tests", "quality", "--max-complexity-allowed", "5"],
+  ["python", "-m", "pytest", "--cov", "--cov-report=term-missing", "-q"]
+]
