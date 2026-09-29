@@ -22,6 +22,11 @@
   [
     "python",
     "-m",
+    "quality.readme_example_main"
+  ],
+  [
+    "python",
+    "-m",
     "quality.incomplete_main"
   ],
   [

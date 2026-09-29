@@ -56,6 +56,7 @@ the example library with your own application.
 - [Reviewed runtime support and required matrices](docs/runtimes.md)
 - [Dependency and architecture boundaries](docs/architecture.md)
 - [Support-file syntax and conditional shell checks](docs/support-files.md)
+- [README example execution](docs/readme-example.md)
 - [Incomplete and disabled source](docs/incomplete-source.md)
 - [Native duplication detection](docs/duplication.md)
 - [Public archives and installed consumers](docs/packages.md)
