@@ -17,6 +17,11 @@
   [
     "python",
     "-m",
+    "quality.support_files_main"
+  ],
+  [
+    "python",
+    "-m",
     "quality.incomplete_main"
   ],
   [
