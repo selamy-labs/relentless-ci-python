@@ -1,10 +1,71 @@
 [
-  ["uv", "lock", "--check"],
-  ["black", "--check", "src", "tests", "quality"],
-  ["ruff", "check", "src", "tests", "quality"],
-  ["mypy", "src", "tests", "quality"],
-  ["pyright"],
-  ["vulture", "src", "tests", "quality"],
-  ["complexipy", "src", "tests", "quality", "--max-complexity-allowed", "5"],
-  ["python", "-m", "pytest", "--cov", "--cov-report=term-missing", "-q"]
+  [
+    "uv",
+    "lock",
+    "--check"
+  ],
+  [
+    "black",
+    "--check",
+    "src",
+    "tests",
+    "quality"
+  ],
+  [
+    "ruff",
+    "check",
+    "src",
+    "tests",
+    "quality"
+  ],
+  [
+    "mypy",
+    "src",
+    "tests",
+    "quality"
+  ],
+  [
+    "pyright"
+  ],
+  [
+    "vulture",
+    "src",
+    "tests",
+    "quality"
+  ],
+  [
+    "complexipy",
+    "src",
+    "tests",
+    "quality",
+    "--max-complexity-allowed",
+    "5"
+  ],
+  [
+    "deptry",
+    "src"
+  ],
+  [
+    "deptry",
+    "src",
+    "tests",
+    "quality",
+    "--non-dev-dependency-groups",
+    "dev",
+    "--ignore",
+    "DEP002"
+  ],
+  [
+    "python",
+    "-m",
+    "quality.architecture_main"
+  ],
+  [
+    "python",
+    "-m",
+    "pytest",
+    "--cov",
+    "--cov-report=term-missing",
+    "-q"
+  ]
 ]

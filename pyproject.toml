@@ -27,6 +27,9 @@ dev = [
     "complexipy>=4",
     "vulture>=2",
     "cosmic-ray>=8.7.0",
+    "deptry>=0.25.1",
+    "grimp>=3.17",
+    "packaging>=26.3",
 ]
 
 [tool.pytest.ini_options]
@@ -58,3 +61,7 @@ select = ["E", "F", "I", "B", "UP", "C90", "ASYNC"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
+
+[tool.deptry]
+exclude = ["^$"]
+known_first_party = ["quality", "tests"]
