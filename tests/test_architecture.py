@@ -50,6 +50,12 @@ def test_module_names(tmp_path: Path, path: str, name: str) -> None:
     assert module_name(tmp_path, tmp_path / path) == name
 
 
+def test_module_name_uses_path_value_with_a_fresh_string(tmp_path: Path) -> None:
+    source = bytearray(b"src").decode()
+    path = tmp_path / source / "example.py"
+    assert module_name(tmp_path, path) == "example"
+
+
 def test_module_inventory(tmp_path: Path) -> None:
     paths = [tmp_path / "src" / "app.py", tmp_path / "quality" / "check.py"]
     assert owned_modules(tmp_path, paths) == {"app": "src", "quality.check": "quality"}
@@ -220,6 +226,27 @@ def test_production_forbidden_edge(scope: str) -> None:
     with pytest.raises(ValueError, match="production imports tooling"):
         verify_boundary(modules, "app", "tooling")
     verify_boundary(modules, "tooling", "app")
+
+
+def test_boundary_uses_scope_values_with_fresh_strings() -> None:
+    source = bytearray(b"src").decode()
+    tooling = bytearray(b"quality").decode()
+    modules = {"app": source, "tooling": tooling}
+    with pytest.raises(ValueError, match="production imports tooling"):
+        verify_boundary(modules, "app", "tooling")
+
+
+def test_native_policy_classifies_fresh_source_scope(tmp_path: Path) -> None:
+    root = repository(tmp_path)
+    source = bytearray(b"src").decode()
+    graph = grimp.ImportGraph()
+    graph.add_module("app")
+    graph.add_module("pytest", is_squashed=True)
+    graph.add_import(importer="app", imported="pytest")
+    with patch("quality.architecture.owned_modules", return_value={"app": source}):
+        with patch("quality.architecture.native_graph", return_value=graph):
+            with pytest.raises(ValueError, match="undeclared runtime"):
+                verify_architecture(root)
 
 
 def test_edge_cycle_and_noncyclic_production() -> None:

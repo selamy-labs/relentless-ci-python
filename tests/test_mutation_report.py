@@ -115,12 +115,14 @@ def create_session(path: Path, output: object = DEFAULT_OUTPUT) -> None:
 def test_reads_real_sqlite_session(tmp_path: Path) -> None:
     path = tmp_path / "result with spaces.sqlite"
     create_session(path)
+    original = path.read_bytes()
     assert verify_session(path) == 1
+    assert path.read_bytes() == original
 
 
 def test_missing_session_fails_without_creating_file(tmp_path: Path) -> None:
     path = tmp_path / "missing.sqlite"
-    with pytest.raises(sqlite3.OperationalError):
+    with pytest.raises(FileNotFoundError):
         verify_session(path)
     assert not path.exists()
 
