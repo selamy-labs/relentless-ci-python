@@ -53,6 +53,7 @@ the example library with your own application.
 - [Mutation outcomes and completeness](docs/mutation.md)
 - [Secret, vulnerability and static security scans](docs/security.md)
 - [Dependency and architecture boundaries](docs/architecture.md)
+- [Public archives and installed consumers](docs/packages.md)
 - [Policy inspirations and chosen thresholds](docs/policy-provenance.md)
 
 Fix the underlying defect and rerun the full command. Do not shrink source

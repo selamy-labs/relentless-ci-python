@@ -28,6 +28,7 @@ def repository(root: Path) -> None:
         "mise.lock",
     ):
         (root / name).write_text("# configuration\n")
+    (root / "quality" / "mutation-timeout.json").write_text("7")
 
 
 def session(path: Path) -> None:
@@ -54,7 +55,7 @@ def test_mutates_an_isolated_copy_with_fresh_baseline(
         arguments: list[str], target: Path, timeout: float, env: dict[str, str]
     ) -> None:
         assert target != tmp_path
-        assert timeout == 5
+        assert timeout == (7 if arguments[1] == "exec" else 5)
         assert env["PYTHONPATH"] == os.pathsep.join([str(target / "src"), str(target)])
         assert env["PYTHONDONTWRITEBYTECODE"] == "1"
         assert mutation.snapshot(target) == mutation.snapshot(tmp_path)
@@ -80,11 +81,21 @@ def change_input(root: Path, target: Path, changed: str) -> None:
     path = directory / "src" / "sample.py"
     if changed.endswith("policy"):
         path = directory / "cosmic-ray.toml"
+    if changed.endswith("timeout"):
+        path = directory / "quality" / "mutation-timeout.json"
     path.write_text("changed\n")
 
 
 @pytest.mark.parametrize(
-    "changed", ["copy", "original", "copy-policy", "original-policy"]
+    "changed",
+    [
+        "copy",
+        "original",
+        "copy-policy",
+        "original-policy",
+        "copy-timeout",
+        "original-timeout",
+    ],
 )
 def test_rejects_changed_inputs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, changed: str
@@ -130,4 +141,5 @@ def test_snapshot_includes_never_imported_code_and_policy(tmp_path: Path) -> Non
     assert files["quality/checks.json"] == b"[]"
     assert files["cosmic-ray.toml"] == b"# configuration\n"
     assert files["quality/security.yml"] == b"rules: []"
-    assert len(files) == 11
+    assert files["quality/mutation-timeout.json"] == b"7"
+    assert len(files) == 12

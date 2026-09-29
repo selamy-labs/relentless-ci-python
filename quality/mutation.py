@@ -6,6 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from quality.commands import run
+from quality.deadline import read_deadline
 from quality.mutation_report import verify_session
 
 INPUTS = ("src", "tests", "quality")
@@ -50,6 +51,7 @@ def copy_inputs(root: Path, target: Path) -> None:
 def mutate(root: Path, timeout: float) -> int:
     """Fresh initialization and baseline are required; cached outcomes are unused."""
     before = snapshot(root)
+    execution_timeout = read_deadline(root / "quality" / "mutation-timeout.json")
     with TemporaryDirectory(prefix="relentless-mutation-") as directory:
         target = Path(directory)
         copy_inputs(root, target)
@@ -59,10 +61,15 @@ def mutate(root: Path, timeout: float) -> int:
         commands = (
             ["cosmic-ray", "init", "cosmic-ray.toml", "mutation.sqlite"],
             ["cosmic-ray", "baseline", "cosmic-ray.toml"],
-            ["cosmic-ray", "exec", "cosmic-ray.toml", "mutation.sqlite"],
         )
         for command in commands:
             run(command, target, timeout, env)
+        run(
+            ["cosmic-ray", "exec", "cosmic-ray.toml", "mutation.sqlite"],
+            target,
+            execution_timeout,
+            env,
+        )
         output = root / ".quality-results"
         output.mkdir(exist_ok=True)
         latest = output / "mutation-latest.sqlite"

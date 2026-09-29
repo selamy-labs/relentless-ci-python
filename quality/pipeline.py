@@ -1,18 +1,16 @@
 """One declarative check list drives local and hosted verification."""
 
 import json
-import math
 import os
 from pathlib import Path
 from typing import TypeGuard
 
 from quality.commands import run
+from quality.deadline import read_deadline
 from quality.mutation import mutate
 from quality.security import verify_security
 from quality.source_scope import verify_sources, verify_tracked
 from quality.test_report import prepare_tests, verify_tests
-
-MINIMUM_TIMEOUT = 0
 
 
 def is_array(value: object) -> TypeGuard[list[object]]:
@@ -44,11 +42,7 @@ def checks(root: Path) -> list[list[str]]:
 
 def verify(root: Path) -> None:
     """Run required definitions in order and stop on the first failed gate."""
-    policy: object = json.loads((root / "quality" / "timeout.json").read_text())
-    if isinstance(policy, bool) or not isinstance(policy, (int, float)):
-        raise ValueError("command timeout must be a positive number")
-    if policy <= MINIMUM_TIMEOUT or not math.isfinite(policy):
-        raise ValueError("command timeout must be a positive finite number")
+    policy = read_deadline(root / "quality" / "timeout.json")
     sources = verify_sources(root)
     prepare_tests(root)
     verify_tracked(root)

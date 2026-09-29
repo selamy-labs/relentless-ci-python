@@ -23,13 +23,9 @@
     "quality.build_constraints_main"
   ],
   [
-    "uv",
-    "build",
-    "--build-constraints",
-    "quality/build-constraints.txt",
-    "--require-hashes",
-    "--out-dir",
-    ".quality-results/dist"
+    "python",
+    "-m",
+    "quality.package_main"
   ],
   [
     "black",
