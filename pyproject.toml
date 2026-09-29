@@ -1,5 +1,12 @@
 [build-system]
-requires = ["hatchling>=1.27"]
+requires = [
+    "hatchling==1.32.4",
+    "packaging==26.3",
+    "pathspec==1.1.1",
+    "pluggy==1.6.0",
+    "tomlkit==0.15.1",
+    "trove-classifiers==2026.9.21.13",
+]
 build-backend = "hatchling.build"
 
 [project]
@@ -15,7 +22,11 @@ relentless-example = "relentless_example.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/relentless_example"]
 
+[tool.hatch.build.targets.sdist]
+include = ["/src/relentless_example", "/LICENSE", "/README.md", "/pyproject.toml"]
+
 [dependency-groups]
+build = ["hatchling==1.32.4"]
 dev = [
     "pytest>=8",
     "pytest-cov>=6",
@@ -30,6 +41,8 @@ dev = [
     "deptry>=0.25.1",
     "grimp>=3.17",
     "packaging>=26.3",
+    "pytest-json-report>=1.5",
+    "hatchling==1.32.4",
 ]
 
 [tool.pytest.ini_options]
@@ -65,3 +78,6 @@ max-complexity = 10
 [tool.deptry]
 exclude = ["^$"]
 known_first_party = ["quality", "tests"]
+
+[tool.uv]
+build-constraint-dependencies = ["hatchling==1.32.4", "packaging==26.3", "pathspec==1.1.1", "pluggy==1.6.0", "tomlkit==0.15.1", "trove-classifiers==2026.9.21.13"]

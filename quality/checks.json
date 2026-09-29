@@ -5,6 +5,33 @@
     "--check"
   ],
   [
+    "uv",
+    "export",
+    "--locked",
+    "--only-group",
+    "build",
+    "--no-emit-project",
+    "--no-header",
+    "--no-annotate",
+    "--quiet",
+    "--output-file",
+    ".quality-results/build-constraints.txt"
+  ],
+  [
+    "python",
+    "-m",
+    "quality.build_constraints_main"
+  ],
+  [
+    "uv",
+    "build",
+    "--build-constraints",
+    "quality/build-constraints.txt",
+    "--require-hashes",
+    "--out-dir",
+    ".quality-results/dist"
+  ],
+  [
     "black",
     "--check",
     "src",
@@ -66,6 +93,8 @@
     "pytest",
     "--cov",
     "--cov-report=term-missing",
-    "-q"
+    "-q",
+    "--json-report",
+    "--json-report-file=.quality-results/tests.json"
   ]
 ]
