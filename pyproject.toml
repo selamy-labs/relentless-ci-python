@@ -36,9 +36,10 @@ filterwarnings = ["error"]
 
 [tool.coverage.run]
 branch = true
-source = ["relentless_example", "quality"]
+source = ["src", "quality"]
 
 [tool.coverage.report]
+include_namespace_packages = true
 fail_under = 100
 show_missing = true
 
