@@ -9,3 +9,4 @@ coverage/
 .coverage
 .mypy_cache/
 .ruff_cache/
+.complexipy_cache/

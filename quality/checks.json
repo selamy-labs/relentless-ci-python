@@ -32,6 +32,11 @@
   [
     "python",
     "-m",
+    "quality.document_spelling_main"
+  ],
+  [
+    "python",
+    "-m",
     "quality.incomplete_main"
   ],
   [

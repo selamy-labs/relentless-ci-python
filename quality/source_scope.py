@@ -15,6 +15,7 @@ GENERATED_ROOTS = {
     ".hypothesis",
     ".mypy_cache",
     ".ruff_cache",
+    ".complexipy_cache",
     ".quality-results",
     "node_modules",
     "dist",
