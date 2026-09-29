@@ -14,13 +14,16 @@ from packaging.utils import canonicalize_name
 from quality.report_data import array, record, text
 from quality.source_scope import verify_sources
 
+SOURCE_DIRECTORY = "src"
+INITIALIZER = "__init__"
+
 
 def module_name(root: Path, path: Path) -> str:
     """Production uses a src layout; tooling and tests use root packages."""
     parts = list(path.relative_to(root).with_suffix("").parts)
-    if parts[0] == "src":
+    if parts[0] == SOURCE_DIRECTORY:
         parts.pop(0)
-    if parts[-1] == "__init__":
+    if parts[-1] == INITIALIZER:
         parts.pop()
     return ".".join(parts)
 
@@ -38,7 +41,7 @@ def owned_modules(root: Path, paths: list[Path]) -> dict[str, str]:
 
 def declared_dependencies(root: Path) -> set[str]:
     """Only runtime declarations grant production access to installed packages."""
-    value: object = tomllib.loads((root / "pyproject.toml").read_text())
+    value: object = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
     project = record(record(value)["project"])
     return {
         canonicalize_name(Requirement(text(item)).name)
@@ -48,7 +51,7 @@ def declared_dependencies(root: Path) -> set[str]:
 
 def tooling_dependencies(root: Path, runtime: set[str]) -> set[str]:
     """All PEP 735 dependency groups are available to development modules."""
-    value: object = tomllib.loads((root / "pyproject.toml").read_text())
+    value: object = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
     groups = record(record(value).get("dependency-groups", {}))
     allowed = runtime.copy()
     for group in groups.values():
@@ -99,7 +102,7 @@ def verify_edge(
 
 def verify_boundary(modules: dict[str, str], importer: str, imported: str) -> None:
     """Tests and verifier modules may import production; the reverse is forbidden."""
-    if modules[importer] == "src" and modules[imported] != "src":
+    if modules[importer] == SOURCE_DIRECTORY and modules[imported] != SOURCE_DIRECTORY:
         raise ValueError(f"production imports tooling: {importer} -> {imported}")
 
 
@@ -126,6 +129,6 @@ def verify_architecture(root: Path) -> None:
     tooling = tooling_dependencies(root, runtime)
     distributions = packages_distributions()
     for importer in modules:
-        allowed = runtime if modules[importer] == "src" else tooling
+        allowed = runtime if modules[importer] == SOURCE_DIRECTORY else tooling
         for imported in graph.find_modules_directly_imported_by(importer):
             verify_edge(graph, modules, importer, imported, allowed, distributions)
