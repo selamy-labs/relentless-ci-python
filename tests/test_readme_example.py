@@ -33,6 +33,11 @@ def test_native_example_and_isolation(
         ("uv build", "uv publish"),
         ("```sh", "```bash"),
         ("Output is `[[1,8]]`", "Expected result: `[[1,8]]`"),
+        (
+            "Output is `[[1,8]]` followed by a newline.",
+            "Output is `[[1,8]]` followed by a newline.\n"
+            "Output is `[[2,8]]` followed by a newline.",
+        ),
     ],
 )
 def test_changed_readme_fails_before_execution(

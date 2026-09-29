@@ -42,10 +42,12 @@ def expected_example(text: str) -> str:
     blocks = re.findall(r"(?ms)^```sh\n(.*?)^```$", section)
     if blocks != [EXAMPLE + "\n"]:
         raise ValueError("README example commands differ from reviewed arguments")
-    output = re.search(r"Output is `([^`]+)` followed by a newline\.", section)
-    if output is None:
-        raise ValueError("README example output claim is missing")
-    return output.group(1) + "\n"
+    outputs: list[str] = re.findall(
+        r"Output is `([^`]+)` followed by a newline\.", section
+    )
+    if len(outputs) != 1:
+        raise ValueError("README example output claim is missing or duplicated")
+    return outputs[0] + "\n"
 
 
 def stage_example(root: Path, stage: Path) -> None:
