@@ -52,6 +52,7 @@ the example library with your own application.
 - [Source enrollment and physical lines](docs/source-scope.md)
 - [Mutation outcomes and completeness](docs/mutation.md)
 - [Secret, vulnerability and static security scans](docs/security.md)
+- [Workflow syntax, shell checks and security](docs/workflows.md)
 - [Dependency and architecture boundaries](docs/architecture.md)
 - [Public archives and installed consumers](docs/packages.md)
 - [Policy inspirations and chosen thresholds](docs/policy-provenance.md)
@@ -70,3 +71,5 @@ code inside enrolled locations. New extensions, generated paths and analyzer
 limitations must be enrolled explicitly before verification can accept them.
 
 MIT licensed; see [LICENSE](LICENSE).
+
+See [command deadlines and test ordering](docs/processes.md).

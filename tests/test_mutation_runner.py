@@ -1,17 +1,39 @@
 """Isolation, fresh-session and restoration probes for mutation orchestration."""
 
+import json
 import os
 import sqlite3
 from contextlib import closing
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
 from quality import mutation
+from quality.mutation_services import Worker
 
 FAILURE = (
     "FAILED tests/test_example.py::test_answer - AssertionError\n1 failed in 0.12s\n"
 )
+
+
+@pytest.fixture(autouse=True)
+def isolated_transport(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """Synthetic SQLite isolates orchestration; native pool has separate probes."""
+
+    def execute(root: Path, timeout: float, env: dict[str, str]) -> list[Worker]:
+        mutation.run(
+            ["cosmic-ray", "exec", "cosmic-ray.toml", "mutation.sqlite"],
+            root,
+            timeout,
+            env,
+        )
+        return []
+
+    monkeypatch.setattr(mutation, "execute_pool", execute)
+    journal = MagicMock()
+    monkeypatch.setattr(mutation, "verify_journals", journal)
+    return journal
 
 
 def repository(root: Path) -> None:
@@ -29,6 +51,7 @@ def repository(root: Path) -> None:
     ):
         (root / name).write_text("# configuration\n")
     (root / "quality" / "mutation-timeout.json").write_text("7")
+    (root / "quality" / "mutation_trial.py").write_text("raise SystemExit(0)\n")
 
 
 def session(path: Path) -> None:
@@ -40,12 +63,13 @@ def session(path: Path) -> None:
         )
         db.execute("INSERT INTO work_items VALUES ('one')")
         db.execute(
-            "INSERT INTO work_results VALUES ('one', 'NORMAL', 'KILLED', ?)", (FAILURE,)
+            "INSERT INTO work_results VALUES ('one', 'NORMAL', 'KILLED', ?)",
+            (json.dumps({"returncode": 1, "stdout": FAILURE, "stderr": ""}),),
         )
 
 
 def test_mutates_an_isolated_copy_with_fresh_baseline(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, isolated_transport: MagicMock
 ) -> None:
     repository(tmp_path)
     received: list[list[str]] = []
@@ -58,6 +82,7 @@ def test_mutates_an_isolated_copy_with_fresh_baseline(
         assert timeout == (7 if arguments[1] == "exec" else 5)
         assert env["PYTHONPATH"] == os.pathsep.join([str(target / "src"), str(target)])
         assert env["PYTHONDONTWRITEBYTECODE"] == "1"
+        assert env["PYTEST_DEBUG_TEMPROOT"] == str(target)
         assert mutation.snapshot(target) == mutation.snapshot(tmp_path)
         assert not (target / "src" / "__pycache__").exists()
         received.append(arguments)
@@ -67,6 +92,7 @@ def test_mutates_an_isolated_copy_with_fresh_baseline(
 
     monkeypatch.setattr(mutation, "run", run)
     assert mutation.mutate(tmp_path, 5) == 1
+    isolated_transport.assert_called_once_with(targets[-1], [])
     assert received == [
         ["cosmic-ray", "init", "cosmic-ray.toml", "mutation.sqlite"],
         ["cosmic-ray", "baseline", "cosmic-ray.toml"],
@@ -142,4 +168,4 @@ def test_snapshot_includes_never_imported_code_and_policy(tmp_path: Path) -> Non
     assert files["cosmic-ray.toml"] == b"# configuration\n"
     assert files["quality/security.yml"] == b"rules: []"
     assert files["quality/mutation-timeout.json"] == b"7"
-    assert len(files) == 12
+    assert len(files) == 13

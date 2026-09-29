@@ -3,73 +3,37 @@
 import os
 import shutil
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
-from quality.commands import run
 from quality.deadline import read_deadline
+from quality.mutation_inputs import copy_inputs as copy_inputs
+from quality.mutation_inputs import environment
+from quality.mutation_inputs import snapshot as snapshot
+from quality.mutation_journal import verify_journals
+from quality.mutation_pool import execute_pool
 from quality.mutation_report import verify_session
+from quality.mutation_workspace import workspace
+from quality.owned_commands import run_owned
+from quality.trial_launcher import prepare_launcher
 
-INPUTS = ("src", "tests", "quality")
-CONFIGURATION = (
-    "pyproject.toml",
-    "cosmic-ray.toml",
-    "uv.lock",
-    "mise.toml",
-    "mise.lock",
-)
-
-
-def snapshot(root: Path) -> dict[str, bytes]:
-    """Bind a run to every authored Python input, including never-imported files."""
-    paths = [
-        path
-        for directory in INPUTS
-        for path in (root / directory).rglob("*")
-        if authored_file(path)
-    ]
-    paths.extend(root / name for name in CONFIGURATION)
-    return {path.relative_to(root).as_posix(): path.read_bytes() for path in paths}
-
-
-def authored_file(path: Path) -> bool:
-    """Include policy/rules/data while omitting reproducible bytecode caches."""
-    return path.is_file() and "__pycache__" not in path.parts
-
-
-def copy_inputs(root: Path, target: Path) -> None:
-    """Copy source and declarative configuration without environments or caches."""
-    for directory in INPUTS:
-        shutil.copytree(
-            root / directory,
-            target / directory,
-            ignore=shutil.ignore_patterns("__pycache__"),
-        )
-    for name in CONFIGURATION:
-        shutil.copy2(root / name, target / name)
+run = run_owned
 
 
 def mutate(root: Path, timeout: float) -> int:
     """Fresh initialization and baseline are required; cached outcomes are unused."""
     before = snapshot(root)
     execution_timeout = read_deadline(root / "quality" / "mutation-timeout.json")
-    with TemporaryDirectory(prefix="relentless-mutation-") as directory:
-        target = Path(directory)
+    with workspace(root) as target:
         copy_inputs(root, target)
-        env = dict(os.environ)
-        env["PYTHONPATH"] = os.pathsep.join([str(target / "src"), str(target)])
-        env["PYTHONDONTWRITEBYTECODE"] = "1"
+        prepare_launcher(target)
+        env = environment(target, dict(os.environ))
         commands = (
             ["cosmic-ray", "init", "cosmic-ray.toml", "mutation.sqlite"],
             ["cosmic-ray", "baseline", "cosmic-ray.toml"],
         )
         for command in commands:
             run(command, target, timeout, env)
-        run(
-            ["cosmic-ray", "exec", "cosmic-ray.toml", "mutation.sqlite"],
-            target,
-            execution_timeout,
-            env,
-        )
+        workers = execute_pool(target, execution_timeout, env)
+        verify_journals(target, workers)
         output = root / ".quality-results"
         output.mkdir(exist_ok=True)
         latest = output / "mutation-latest.sqlite"

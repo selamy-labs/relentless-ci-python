@@ -2,7 +2,7 @@
 module-path = ["src", "quality"]
 timeout = 30.0
 excluded-modules = []
-test-command = "python -m pytest -x -q --color=no"
+test-command = "python .quality-results/mutation-trial.py"
 
 [cosmic-ray.distributor]
 name = "local"

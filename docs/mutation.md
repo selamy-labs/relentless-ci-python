@@ -6,6 +6,28 @@ code are included. Every planned mutant must have a normal, killed outcome;
 survivors, missing results, execution errors and timeouts fail. Equivalent-mutant
 exclusions are not permitted by this template's policy.
 
+The native trial command executes `.quality-results/mutation-trial.py`, generated
+byte-for-byte from enrolled `quality/mutation_trial.py` before the baseline and
+each worker starts. That source remains fully covered and mutated. The runtime
+copy prevents a candidate from changing the launcher before tests can detect it.
+Worker requests verify its bytes before and after native execution; stale copies
+are replaced, and missing or changed copies fail. The reproduction command is
+`python -c 'from pathlib import Path; from quality.trial_launcher import prepare_launcher; prepare_launcher(Path.cwd())'`.
+
+The launcher runs exactly `python -m pytest -x -q --color=no`.
+The adapter retains pytest stdout, stderr and
+its signed exit status in a fresh JSON record inside the native result. It does
+not select tests, change operators or change the native 30-second trial limit.
+Credit requires actual pytest status 1, empty stderr, a completed `FAILED tests/`
+record and the exact one-failure summary. Signals, arbitrary nonzero exits,
+runtime diagnostics, duplicate JSON keys and missing or malformed records fail.
+The complete native plan, worker outcomes and source restoration remain required.
+
+Each coordinator and worker binds `PYTEST_DEBUG_TEMPROOT` to its own existing
+workspace. Pytest therefore keeps temporary tests and cleanup inside that
+workspace rather than sharing another worker's numbered directories. Test
+selection, strict warnings and deadlines remain unchanged.
+
 Source, tests and protected configuration are copied into a temporary directory.
 The verifier compares their bytes with the original snapshot after execution,
 including the checkout, so changed inputs or unrestored mutations fail. The raw

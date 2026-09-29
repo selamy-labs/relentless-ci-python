@@ -1414,6 +1414,7 @@ build = [
     { name = "hatchling" },
 ]
 dev = [
+    { name = "aiohttp" },
     { name = "black" },
     { name = "complexipy" },
     { name = "cosmic-ray" },
@@ -1436,6 +1437,7 @@ dev = [
 [package.metadata.requires-dev]
 build = [{ name = "hatchling", specifier = "==1.32.4" }]
 dev = [
+    { name = "aiohttp", specifier = "==3.14.3" },
     { name = "black", specifier = ">=25" },
     { name = "complexipy", specifier = ">=4" },
     { name = "cosmic-ray", specifier = ">=8.7.0" },

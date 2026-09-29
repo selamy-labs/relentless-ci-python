@@ -28,6 +28,7 @@ include = ["/src/relentless_example", "/LICENSE", "/README.md", "/pyproject.toml
 [dependency-groups]
 build = ["hatchling==1.32.4"]
 dev = [
+    "aiohttp==3.14.3",
     "pytest>=8",
     "pytest-cov>=6",
     "hypothesis>=6",

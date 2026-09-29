@@ -6,6 +6,8 @@ from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 
+from quality.trial_report import trial_stdout
+
 NORMAL = "NORMAL"
 KILLED = "KILLED"
 
@@ -24,12 +26,10 @@ def verify_trial(result: Result) -> None:
     """Never credit timeouts, worker exceptions or arbitrary nonzero exits."""
     if result.worker != NORMAL or result.outcome != KILLED:
         raise ValueError("mutation worker must finish normally with a killed result")
-    if re.search(r"(?m)^FAILED tests/\S+.*$", result.output) is None:
+    output = trial_stdout(result.output)
+    if re.search(r"(?m)^FAILED tests/\S+.*$", output) is None:
         raise ValueError("mutation must produce a pytest failure record")
-    if (
-        re.search(r"(?m)^1 failed(?:, \d+ passed)? in \d+\.\d+s\n?\Z", result.output)
-        is None
-    ):
+    if re.search(r"(?m)^1 failed(?:, \d+ passed)? in \d+\.\d+s\n?\Z", output) is None:
         raise ValueError("mutation must finish with one pytest failure and no errors")
 
 

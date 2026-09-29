@@ -5,6 +5,11 @@
     "--check"
   ],
   [
+    "python",
+    "-m",
+    "quality.workflows_main"
+  ],
+  [
     "uv",
     "export",
     "--locked",

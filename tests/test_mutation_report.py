@@ -1,5 +1,6 @@
 """Defect probes for raw mutation status and inventory enforcement."""
 
+import json
 import sqlite3
 from contextlib import closing
 from pathlib import Path
@@ -14,7 +15,8 @@ FAILURE = (
 
 
 def killed(job_id: str = "one", output: str = FAILURE) -> Result:
-    return Result(job_id, "NORMAL", "KILLED", output)
+    diagnostic = json.dumps({"returncode": 1, "stdout": output, "stderr": ""})
+    return Result(job_id, "NORMAL", "KILLED", diagnostic)
 
 
 def test_accepts_all_planned_test_failures() -> None:
@@ -92,7 +94,12 @@ def test_rejects_duplicate_jobs(planned: list[str], results: list[str]) -> None:
         verify_results(planned, [killed(job_id) for job_id in results])
 
 
-def create_session(path: Path, output: object = FAILURE) -> None:
+DEFAULT_OUTPUT = object()
+
+
+def create_session(path: Path, output: object = DEFAULT_OUTPUT) -> None:
+    if output is DEFAULT_OUTPUT:
+        output = killed().output
     with closing(sqlite3.connect(path)) as db, db:
         db.execute("CREATE TABLE work_items (job_id TEXT)")
         db.execute(
