@@ -8,7 +8,6 @@ newline, with the README output claim. Commands use fixed argument arrays with
 no shell evaluation and prohibit runtime Python downloads. Missing tools,
 failed builds, failed CLI runs and changed documented commands fail the gate.
 
-This is one part of documentation consistency. The candidate does not yet
-validate Markdown style, and still requires full
+This is one part of documentation consistency. The candidate still requires full
 mutation and hosted runtime qualification before enrollment in the published
 template.

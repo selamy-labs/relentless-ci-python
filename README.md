@@ -59,6 +59,7 @@ the example library with your own application.
 - [README example execution](docs/readme-example.md)
 - [Local documentation links](docs/document-links.md)
 - [Native documentation spelling](docs/document-spelling.md)
+- [Markdown style](docs/document-style.md)
 - [Incomplete and disabled source](docs/incomplete-source.md)
 - [Native duplication detection](docs/duplication.md)
 - [Public archives and installed consumers](docs/packages.md)

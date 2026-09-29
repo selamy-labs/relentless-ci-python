@@ -37,6 +37,11 @@
   [
     "python",
     "-m",
+    "quality.document_style_main"
+  ],
+  [
+    "python",
+    "-m",
     "quality.incomplete_main"
   ],
   [

@@ -47,6 +47,8 @@ dev = [
     "pyyaml==6.0.3",
     "types-pyyaml>=6.0.12.20260906",
     "markdown-it-py==4.2.0",
+    "mdformat==1.0.0",
+    "mdformat-gfm==1.0.0",
 ]
 
 [tool.pytest.ini_options]

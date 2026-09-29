@@ -9,6 +9,6 @@ stale or redirected reports and source edits during the check. Its receipt
 binds each document to a SHA-256 digest and lists external URLs separately;
 external site availability does not affect this local gate.
 
-This isolated candidate still needs Markdown style lint, full
-mutation and hosted runtime qualification before enrollment in the published
+This isolated candidate still needs full mutation and hosted runtime
+qualification before enrollment in the published
 template.
