@@ -33,13 +33,21 @@ The verifier compares their bytes with the original snapshot after execution,
 including the checkout, so changed inputs or unrestored mutations fail. The raw
 SQLite result is retained in `.quality-results/mutation-latest.sqlite`; only a
 validated session is also saved as `.quality-results/mutation.sqlite`.
+Raw report validation reads a private temporary copy and never opens the
+original database for writes. This avoids platform-dependent SQLite URI
+handling while preserving the exact complete-result check.
 
 Individual trials have a 30-second limit. Initialization and baseline use the
 ordinary 1,800-second command deadline. Full mutation execution has a separate
-3,600-second deadline in `quality/mutation-timeout.json`. These deadlines bound
+6,000-second deadline in `quality/mutation-timeout.json`. These deadlines bound
 execution; reaching one never counts as a killed mutant or a successful gate.
 The separate execution budget accommodates the complete verifier mutation plan.
+The first hosted Linux matrix, on standard four-CPU runners, retained between
+2,178 and 2,783 of 2,798 raw results at the former 3,600-second deadline.
+All four jobs failed. The 6,000-second bound covers that measured throughput
+with shared-runner variance while keeping the 30-second trial bound and every
+mutant, test and result-integrity check unchanged.
 
 Run the same full local verifier described in the README. It requires no paid
 service or account credentials for mutation analysis. Hosted matrix enforcement
-is pending publication of this template.
+requires a green run on the repaired published main revision.

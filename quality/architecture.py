@@ -15,13 +15,14 @@ from quality.report_data import array, record, text
 from quality.source_scope import verify_sources
 
 SOURCE_DIRECTORY = "src"
+SOURCE_ROOTS = frozenset({SOURCE_DIRECTORY})
 INITIALIZER = "__init__"
 
 
 def module_name(root: Path, path: Path) -> str:
     """Production uses a src layout; tooling and tests use root packages."""
     parts = list(path.relative_to(root).with_suffix("").parts)
-    if parts[0] == SOURCE_DIRECTORY:
+    if parts[0] in SOURCE_ROOTS:
         parts.pop(0)
     if parts[-1] == INITIALIZER:
         parts.pop()
@@ -102,7 +103,7 @@ def verify_edge(
 
 def verify_boundary(modules: dict[str, str], importer: str, imported: str) -> None:
     """Tests and verifier modules may import production; the reverse is forbidden."""
-    if modules[importer] == SOURCE_DIRECTORY and modules[imported] != SOURCE_DIRECTORY:
+    if modules[importer] in SOURCE_ROOTS and modules[imported] not in SOURCE_ROOTS:
         raise ValueError(f"production imports tooling: {importer} -> {imported}")
 
 
@@ -129,6 +130,6 @@ def verify_architecture(root: Path) -> None:
     tooling = tooling_dependencies(root, runtime)
     distributions = packages_distributions()
     for importer in modules:
-        allowed = runtime if modules[importer] == SOURCE_DIRECTORY else tooling
+        allowed = runtime if modules[importer] in SOURCE_ROOTS else tooling
         for imported in graph.find_modules_directly_imported_by(importer):
             verify_edge(graph, modules, importer, imported, allowed, distributions)
