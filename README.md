@@ -60,6 +60,7 @@ the example library with your own application.
 - [Local documentation links](docs/document-links.md)
 - [Native documentation spelling](docs/document-spelling.md)
 - [Markdown style](docs/document-style.md)
+- [Bounded CLI fuzzing](docs/bounded-fuzz.md)
 - [Incomplete and disabled source](docs/incomplete-source.md)
 - [Native duplication detection](docs/duplication.md)
 - [Public archives and installed consumers](docs/packages.md)
