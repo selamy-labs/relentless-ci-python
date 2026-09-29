@@ -27,6 +27,11 @@
   [
     "python",
     "-m",
+    "quality.document_links_main"
+  ],
+  [
+    "python",
+    "-m",
     "quality.incomplete_main"
   ],
   [

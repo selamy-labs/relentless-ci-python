@@ -9,6 +9,6 @@ no shell evaluation and prohibit runtime Python downloads. Missing tools,
 failed builds, failed CLI runs and changed documented commands fail the gate.
 
 This is one part of documentation consistency. The candidate does not yet
-validate Markdown structure, local links or spelling, and still requires full
+validate Markdown style or spelling, and still requires full
 mutation and hosted runtime qualification before enrollment in the published
 template.
