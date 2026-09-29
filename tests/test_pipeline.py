@@ -78,6 +78,11 @@ def test_runs_every_command_in_order_then_mutation(
         assert env == dict(os.environ)
         received.append(arguments)
 
+    def security(root: Path, timeout: float) -> None:
+        assert root == tmp_path
+        assert timeout == expected_timeout
+        received.append(["security"])
+
     def mutation(root: Path, timeout: float) -> int:
         assert root == tmp_path
         assert timeout == expected_timeout
@@ -87,9 +92,15 @@ def test_runs_every_command_in_order_then_mutation(
     monkeypatch.setattr(pipeline, "verify_sources", scope)
     monkeypatch.setattr(pipeline, "verify_tracked", tracked)
     monkeypatch.setattr(pipeline, "run", command)
+    monkeypatch.setattr(pipeline, "verify_security", security)
     monkeypatch.setattr(pipeline, "mutate", mutation)
     pipeline.verify(tmp_path)
-    assert received == [["first", "argument with spaces"], ["second"], ["mutation"]]
+    assert received == [
+        ["first", "argument with spaces"],
+        ["second"],
+        ["security"],
+        ["mutation"],
+    ]
 
 
 def test_failed_command_prevents_later_checks(

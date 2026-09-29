@@ -20,7 +20,13 @@ def repository(root: Path) -> None:
         (root / directory / "sample.py").write_text("value = 1\n")
     (root / "src" / "__pycache__").mkdir()
     (root / "src" / "__pycache__" / "junk").write_text("cache")
-    for name in ("pyproject.toml", "cosmic-ray.toml", "uv.lock"):
+    for name in (
+        "pyproject.toml",
+        "cosmic-ray.toml",
+        "uv.lock",
+        "mise.toml",
+        "mise.lock",
+    ):
         (root / name).write_text("# configuration\n")
 
 
@@ -118,8 +124,10 @@ def test_snapshot_includes_never_imported_code_and_policy(tmp_path: Path) -> Non
     repository(tmp_path)
     (tmp_path / "quality" / "unused.py").write_text("unused = 42\n")
     (tmp_path / "quality" / "checks.json").write_text("[]")
+    (tmp_path / "quality" / "security.yml").write_text("rules: []")
     files = mutation.snapshot(tmp_path)
     assert files["quality/unused.py"] == b"unused = 42\n"
     assert files["quality/checks.json"] == b"[]"
     assert files["cosmic-ray.toml"] == b"# configuration\n"
-    assert len(files) == 8
+    assert files["quality/security.yml"] == b"rules: []"
+    assert len(files) == 11

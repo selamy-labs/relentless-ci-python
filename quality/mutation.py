@@ -9,7 +9,13 @@ from quality.commands import run
 from quality.mutation_report import verify_session
 
 INPUTS = ("src", "tests", "quality")
-CONFIGURATION = ("pyproject.toml", "cosmic-ray.toml", "uv.lock")
+CONFIGURATION = (
+    "pyproject.toml",
+    "cosmic-ray.toml",
+    "uv.lock",
+    "mise.toml",
+    "mise.lock",
+)
 
 
 def snapshot(root: Path) -> dict[str, bytes]:
@@ -18,10 +24,15 @@ def snapshot(root: Path) -> dict[str, bytes]:
         path
         for directory in INPUTS
         for path in (root / directory).rglob("*")
-        if path.suffix in {".py", ".json"}
+        if authored_file(path)
     ]
     paths.extend(root / name for name in CONFIGURATION)
     return {path.relative_to(root).as_posix(): path.read_bytes() for path in paths}
+
+
+def authored_file(path: Path) -> bool:
+    """Include policy/rules/data while omitting reproducible bytecode caches."""
+    return path.is_file() and "__pycache__" not in path.parts
 
 
 def copy_inputs(root: Path, target: Path) -> None:

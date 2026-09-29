@@ -8,6 +8,7 @@ from typing import TypeGuard
 
 from quality.commands import run
 from quality.mutation import mutate
+from quality.security import verify_security
 from quality.source_scope import verify_sources, verify_tracked
 
 MINIMUM_TIMEOUT = 0
@@ -51,4 +52,5 @@ def verify(root: Path) -> None:
     verify_tracked(root)
     for item in checks(root):
         run(item, root, policy, dict(os.environ))
+    verify_security(root, policy)
     mutate(root, policy)
