@@ -36,6 +36,18 @@ def repository(tmp_path: Path, source: str = "") -> Path:
     return tmp_path
 
 
+def deptry_result(root: Path) -> subprocess.CompletedProcess[str]:
+    """Run the native analyzer against a deliberately defective repository."""
+    return subprocess.run(
+        [sys.executable, "-m", "deptry", "src", "--exclude", "^$"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+
+
 @pytest.mark.parametrize(
     ("path", "name"),
     [
@@ -299,14 +311,7 @@ def test_entry_point() -> None:
 )
 def test_real_deptry_production_defects(tmp_path: Path, source: str, rule: str) -> None:
     root = repository(tmp_path, source)
-    result = subprocess.run(
-        [sys.executable, "-m", "deptry", "src", "--exclude", "^$"],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        timeout=30,
-        check=False,
-    )
+    result = deptry_result(root)
     assert result.returncode == 1
     assert rule in result.stderr
 
@@ -319,14 +324,7 @@ def test_real_deptry_unused_runtime_dependency(tmp_path: Path) -> None:
             "[dependency-groups]", 'dependencies=["pytest"]\n[dependency-groups]'
         )
     )
-    result = subprocess.run(
-        [sys.executable, "-m", "deptry", "src", "--exclude", "^$"],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        timeout=30,
-        check=False,
-    )
+    result = deptry_result(root)
     assert result.returncode == 1
     assert "DEP002" in result.stderr
 

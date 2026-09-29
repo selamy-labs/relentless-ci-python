@@ -38,6 +38,11 @@
     "quality.package_main"
   ],
   [
+    "python",
+    "-m",
+    "quality.duplication_main"
+  ],
+  [
     "black",
     "--check",
     "src",
