@@ -80,6 +80,17 @@ def test_accepts_complete_clean_report(tmp_path: Path) -> None:
     verify_duplication_report(native(path), expected(path))
 
 
+def test_accepts_no_threshold_eligible_files(tmp_path: Path) -> None:
+    value = native(tmp_path / "small.py")
+    summary = record(value["summary"])
+    summary.update(files=[], folders=[], totalFiles=0, totalFolders=0)
+    statistics = record(value["statistics"])
+    statistics["formats"] = {}
+    total = record(statistics["total"])
+    total.update(lines=0, sources=0, tokens=0)
+    verify_duplication_report(value, {})
+
+
 def test_rejects_reported_clone(tmp_path: Path) -> None:
     path = tmp_path / "check.py"
     value = native(path)

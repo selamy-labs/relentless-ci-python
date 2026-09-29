@@ -171,10 +171,12 @@ def verify_statistics(value: object, expected: dict[str, Eligible]) -> None:
     if datetime.fromisoformat(when.replace("Z", "+00:00")).tzinfo is None:
         raise ValueError("duplication report timestamp lacks timezone")
     formats = record(statistics["formats"])
-    if set(formats) != {"python"}:
+    required_formats: set[str] = {"python"} if expected else set()
+    if set(formats) != required_formats:
         raise ValueError("duplication report format inventory is incomplete")
     files = list(expected.values())
-    metric(formats["python"], files)
+    if files:
+        metric(formats["python"], files)
     metric(statistics["total"], files)
 
 
