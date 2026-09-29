@@ -11,6 +11,14 @@ import pytest
 from quality import pipeline
 
 
+def scope(root: Path) -> list[Path]:
+    return [root]
+
+
+def tracked(_root: Path) -> None:
+    return
+
+
 def registry(root: Path, value: object) -> None:
     (root / "quality").mkdir(exist_ok=True)
     (root / "quality" / "checks.json").write_text(json.dumps(value))
@@ -76,6 +84,8 @@ def test_runs_every_command_in_order_then_mutation(
         received.append(["mutation"])
         return 1
 
+    monkeypatch.setattr(pipeline, "verify_sources", scope)
+    monkeypatch.setattr(pipeline, "verify_tracked", tracked)
     monkeypatch.setattr(pipeline, "run", command)
     monkeypatch.setattr(pipeline, "mutate", mutation)
     pipeline.verify(tmp_path)
@@ -94,6 +104,8 @@ def test_failed_command_prevents_later_checks(
         received.append(arguments)
         raise subprocess.CalledProcessError(2, arguments)
 
+    monkeypatch.setattr(pipeline, "verify_sources", scope)
+    monkeypatch.setattr(pipeline, "verify_tracked", tracked)
     monkeypatch.setattr(pipeline, "run", failure)
     with pytest.raises(subprocess.CalledProcessError):
         pipeline.verify(tmp_path)
@@ -107,3 +119,9 @@ def test_module_entry_point_invokes_the_current_repository(
     monkeypatch.setattr(pipeline, "verify", received.append)
     runpy.run_module("quality.verify", run_name="__main__")
     assert received == [Path.cwd()]
+
+
+def test_invalid_source_scope_prevents_tool_execution(tmp_path: Path) -> None:
+    registry(tmp_path, [["absent-tool"]])
+    with pytest.raises(ValueError, match="no authored Python"):
+        pipeline.verify(tmp_path)
