@@ -15,6 +15,11 @@
     "quality.workflows_main"
   ],
   [
+    "python",
+    "-m",
+    "quality.incomplete_main"
+  ],
+  [
     "uv",
     "export",
     "--locked",
