@@ -102,6 +102,8 @@ jobs:
           github-token: ""
       - name: Locked environment
         run: uv sync --locked --group dev
+      - name: Reviewed runtime support and declared matrices
+        run: uv run --locked --group dev python -m quality.runtime_support_main
       - name: Product unit, property and CLI behavior
         run: uv run --locked --group dev python -m pytest -q tests/test_intervals.py tests/test_properties.py tests/test_cli.py
       - name: Archives and both isolated installed consumers

@@ -7,6 +7,7 @@ import runpy
 import socket
 import sys
 import time
+from collections.abc import Awaitable
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, call
@@ -16,6 +17,10 @@ from aiohttp import web
 
 from quality import mutation_coordinator as coordinator
 from quality import mutation_worker as worker
+
+
+async def run_handler(value: Awaitable[web.StreamResponse]) -> web.StreamResponse:
+    return await value
 
 
 def trial_source(root: Path) -> None:
@@ -101,7 +106,7 @@ def test_completed_requests_are_journaled_without_response_changes(
     payload = {"mutations": [{"module_path": "src/item.py", "occurrence": 7}]}
     request = MagicMock(json=AsyncMock(return_value=payload))
     wrapped = worker.journal_handler(tmp_path, handler)
-    assert asyncio.run(wrapped(request)) is response
+    assert asyncio.run(run_handler(wrapped(request))) is response
     handler.assert_awaited_once_with(request)
     request.json.assert_awaited_once_with()
     entries = (tmp_path / ".quality-results/worker-jobs.jsonl").read_text().splitlines()
@@ -135,7 +140,7 @@ def test_launcher_damage_stops_requests_before_journal_credit(
     request = MagicMock(json=AsyncMock())
 
     with pytest.raises((ValueError, FileNotFoundError)):
-        asyncio.run(wrapped(request))
+        asyncio.run(run_handler(wrapped(request)))
 
     assert handler.await_count == int(timing == "after")
     request.json.assert_not_awaited()

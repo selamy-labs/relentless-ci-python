@@ -44,3 +44,7 @@ The local native gate has passed on Linux with the pinned tools. Hosted runs,
 the complete runtime/platform matrix, trusted policy-change approval and live
 required-check protections remain pending. Local scanner success does not prove
 that a contributor cannot alter a workflow or forge its status context.
+
+The offline [runtime-support gate](runtimes.md) also requires both Python
+matrices and package metadata to match a current reviewed upstream snapshot.
+Each compatibility job runs it after installing the locked environment.

@@ -7,6 +7,11 @@
   [
     "python",
     "-m",
+    "quality.runtime_support_main"
+  ],
+  [
+    "python",
+    "-m",
     "quality.workflows_main"
   ],
   [
