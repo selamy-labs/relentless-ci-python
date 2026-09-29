@@ -44,6 +44,14 @@ supervision failure. It never hard-kills the supervisor before descendant cleanu
 Failure workspaces are copied with their database, sidecars, source and receipts
 before deletion. Unproven cleanup or a failed archive keeps the original workspace.
 
+Successful workspaces also remain available in a fresh
+`.quality-results/mutation-success-*/workspace` archive before temporary cleanup.
+This retains the complete native database, worker journals, supervision requests
+and receipts, exact input copies and generated trial launchers. Each run has its
+own archive; old reports cannot substitute for the current run. If copying fails,
+the verifier fails and leaves the original workspace intact. Hosted artifact
+uploads include successful and failing archives with hidden receipt directories.
+
 Native Linux probes cover separate-session timeout/root-exit children, signed
 failures, interrupts with warnings treated as errors, and creator death. Actual
 Cosmic Ray timeout probes reap its separate trial session and retain the partial

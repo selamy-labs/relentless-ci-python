@@ -1,4 +1,4 @@
-"""Preserve failing mutation evidence before deletion; retain uncertain live owners."""
+"""Preserve completed mutation evidence before deletion; retain uncertain owners."""
 
 import json
 import shutil
@@ -46,16 +46,26 @@ def remove_workspace(target: Path, retain: bool) -> None:
     shutil.rmtree(target)
 
 
+def preserve_success(root: Path, target: Path) -> None:
+    """Retain raw journals, receipts, source and configuration from this run."""
+    output = root / ".quality-results"
+    output.mkdir(exist_ok=True)
+    retained = Path(mkdtemp(prefix="mutation-success-", dir=output))
+    shutil.copytree(target, retained / "workspace")
+
+
 @contextmanager
 def workspace(root: Path) -> Generator[Path]:
     target = Path(mkdtemp(prefix="relentless-mutation-"))
-    retain = False
+    retain = True
     try:
         yield target
     except BaseException as error:
-        retain = True
         preserve_failure(root, target, error)
         retain = cleanup_unproven(error)
         raise
+    else:
+        preserve_success(root, target)
+        retain = False
     finally:
         remove_workspace(target, retain)

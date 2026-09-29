@@ -61,6 +61,8 @@ jobs:
             .quality-results/static-security.json
             .quality-results/workflows-security.json
             .quality-results/mutation*.sqlite
+            .quality-results/mutation-success-*/
+            .quality-results/mutation-failure-*/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7

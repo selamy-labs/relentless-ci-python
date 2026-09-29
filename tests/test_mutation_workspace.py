@@ -18,7 +18,54 @@ def test_success_removes_only_its_own_temporary_workspace(tmp_path: Path) -> Non
         (target / "source.py").write_text("original")
     assert not target.exists()
     assert (tmp_path / "foreign").read_text() == "keep"
-    assert not (tmp_path / ".quality-results").exists()
+    retained = list((tmp_path / ".quality-results").glob("mutation-success-*"))
+    assert len(retained) == 1
+    assert (retained[0] / "workspace/source.py").read_text() == "original"
+    assert not (retained[0] / "failure.json").exists()
+
+
+def test_success_retains_distinct_complete_native_evidence_for_each_run(
+    tmp_path: Path,
+) -> None:
+    for result in (b"first raw results", b"second raw results"):
+        with workspace(tmp_path) as target:
+            (target / "mutation.sqlite").write_bytes(result)
+            (target / "quality").mkdir()
+            (target / "quality/policy.json").write_bytes(result)
+            owned = target / ".quality-results/owned/run-private"
+            owned.mkdir(parents=True)
+            (owned / "request.json").write_bytes(result)
+            (owned / "completion.json").write_bytes(result)
+            (target / ".quality-results/worker-jobs.jsonl").write_bytes(result)
+        assert not target.exists()
+    retained = list((tmp_path / ".quality-results").glob("mutation-success-*"))
+    assert len(retained) == 2
+    values: set[bytes] = set()
+    for archive in retained:
+        copied = archive / "workspace"
+        value = (copied / "mutation.sqlite").read_bytes()
+        values.add(value)
+        for name in (
+            "quality/policy.json",
+            ".quality-results/owned/run-private/request.json",
+            ".quality-results/owned/run-private/completion.json",
+            ".quality-results/worker-jobs.jsonl",
+        ):
+            assert (copied / name).read_bytes() == value
+    assert values == {b"first raw results", b"second raw results"}
+
+
+def test_failed_success_archive_retains_original_evidence(tmp_path: Path) -> None:
+    target: Path | None = None
+    with patch(
+        "quality.mutation_workspace.shutil.copytree", side_effect=OSError("disk")
+    ):
+        with pytest.raises(OSError, match="disk"):
+            with workspace(tmp_path) as target:
+                (target / "mutation.sqlite").write_bytes(b"complete raw database")
+    assert target is not None
+    assert (target / "mutation.sqlite").read_bytes() == b"complete raw database"
+    shutil.rmtree(target)
 
 
 @pytest.mark.parametrize("unproven", [False, True])
