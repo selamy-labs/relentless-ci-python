@@ -2,9 +2,11 @@
 
 The template declares Python 3.11, 3.12, 3.13 and 3.14. The primary
 [Python release-cycle API](https://peps.python.org/api/release-cycle.json) was
-reviewed on 2026-09-29. Its byte-for-byte snapshot is in
+reviewed on 2026-09-29. Its canonical LF snapshot is in
 `quality/python-releases.json`; `quality/runtime-support.json` records its
 SHA-256 digest, approved branches and review window.
+Windows checkout CRLF is normalized to LF before digest comparison; all other
+bytes must match the reviewed snapshot.
 
 The [developer guide](https://devguide.python.org/versions/) at commit
 `d9adc4f23cfad7e9e366f4fec408bdea18f99cc2` lists upstream support. Its generator
@@ -35,7 +37,7 @@ or remove the branch through reviewed policy changes.
 
 Package `requires-python` and both workflow matrices must exactly match the
 reviewed ordered contiguous branch inventory. Missing declarations, unsupported
-branches, duplicate keys, altered snapshot bytes and malformed dates fail.
+branches, duplicate keys, altered canonical snapshot bytes and malformed dates fail.
 Workflow parsing uses PyYAML's safe loader. Aliases, anchors, duplicate mapping
 keys, non-string keys, multiple documents and invalid UTF-8 are rejected.
 The local typed adapter declares documented parser results missing from the
