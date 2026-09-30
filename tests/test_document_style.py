@@ -36,7 +36,7 @@ def test_native_all_authored_documents() -> None:
 
 @pytest.mark.parametrize(
     "source",
-    ["\n\n# Header\n", "# Header\n\n\nParagraph\n"],
+    ["\n\n# Header\n", "# Header\n\n\nParagraph\n", "# Header  \n"],
 )
 def test_unformatted_markdown_fails_despite_ambient_config(
     tmp_path: Path, source: str
