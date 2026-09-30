@@ -1,5 +1,7 @@
 """Check every authored Markdown link against a source-bound file inventory."""
 
+from __future__ import annotations
+
 import hashlib
 import json
 import re

@@ -1,5 +1,7 @@
 """Reject unfinished or disabled authored Python without scanning string fixtures."""
 
+from __future__ import annotations
+
 import ast
 import io
 import re

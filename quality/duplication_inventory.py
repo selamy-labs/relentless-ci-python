@@ -1,5 +1,7 @@
 """Validate one native scanner inventory against a frozen Python file."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeGuard
