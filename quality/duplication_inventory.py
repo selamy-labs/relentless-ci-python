@@ -46,7 +46,7 @@ def verify_fields(file: dict[str, object]) -> None:
 
 def verify_identity(file: dict[str, object], path: Path, content: bytes) -> None:
     """Bind reported path and byte length to the staged source."""
-    if text(file["path"]) != str(path) or file["format"] != "python":
+    if text(file["path"]) != str(path) or file["format"] not in ("python",):
         raise ValueError("duplication inventory substituted source identity")
     if nonnegative(file["bytes"]) != len(content):
         raise ValueError("duplication inventory substituted source bytes")
@@ -67,7 +67,7 @@ def item(value: object, path: Path, content: bytes) -> Eligible:
 def inventory_files(value: object) -> list[object]:
     """Require one complete per-file native summary."""
     summary = record(record(value)["summary"])
-    if summary["by"] != "tokens":
+    if summary["by"] not in ("tokens",):
         raise ValueError("duplication inventory summary measure changed")
     files = array(summary["files"])
     if nonnegative(summary["totalFiles"]) - len(files) or len(files) > 1:

@@ -59,6 +59,18 @@ def test_native_deadline_expires_before_launch(tmp_path: Path) -> None:
         native(tmp_path, ["--version"], time.monotonic() - 1)
 
 
+def test_native_zero_remaining_budget_does_not_launch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def forbidden(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("zero-budget scan launched a native tool")
+
+    monkeypatch.setattr(time, "monotonic", lambda: 100.0)
+    monkeypatch.setattr(subprocess, "run", forbidden)
+    with pytest.raises(TimeoutError, match="whole-scan deadline"):
+        native(tmp_path, ["--version"], 100.0)
+
+
 def test_missing_native_tool_fails(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -23,7 +23,7 @@ def file_record(line: str) -> str:
     item: object = json.loads(line)
     if not is_object(item) or set(item) != {"type", "path"}:
         raise ValueError("native spelling inventory has malformed record")
-    if item["type"] != "file" or not isinstance(item["path"], str):
+    if item["type"] not in ("file",) or not isinstance(item["path"], str):
         raise ValueError("native spelling inventory has malformed file")
     return item["path"]
 

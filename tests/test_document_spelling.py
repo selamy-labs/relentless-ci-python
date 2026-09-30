@@ -65,6 +65,7 @@ def test_native_typo_survives_ambient_ignore(tmp_path: Path) -> None:
         ('{"type":"a","path":"README.md"}', "malformed file"),
         ('{"type":"file","path":42}', "malformed file"),
         ('{"type":"file","path":"README.md","extra":1}', "malformed record"),
+        ('{"path":"README.md"}', "malformed record"),
         ("[]", "malformed record"),
     ],
 )

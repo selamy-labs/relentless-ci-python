@@ -15,7 +15,7 @@ ZERO_FIELDS = {
     "percentage",
     "percentageTokens",
 }
-METRIC_FIELDS = ZERO_FIELDS | {"lines", "sources", "tokens"}
+METRIC_FIELDS = {*ZERO_FIELDS, "lines", "sources", "tokens"}
 FILE_FIELDS = {
     "bytes",
     "complexity",
@@ -79,7 +79,7 @@ def verify_file(value: object, expected: Eligible) -> None:
 
 def verify_file_identity(file: dict[str, object]) -> None:
     """Reject a substituted format or report schema."""
-    if set(file) != FILE_FIELDS or file["format"] != "python":
+    if set(file) != FILE_FIELDS or file["format"] not in ("python",):
         raise ValueError("duplication file fields or format differ")
 
 
@@ -126,14 +126,14 @@ def verify_folder_counts(folder: dict[str, object], members: list[Eligible]) -> 
 
 def verify_folder_zero(folder: dict[str, object]) -> None:
     """A clean folder may not report cloned lines."""
-    if nonnegative(folder["duplicatedLines"]) != 0:
+    if nonnegative(folder["duplicatedLines"]):
         raise ValueError("duplication folder receipt differs from eligible source")
 
 
 def verify_summary(value: object, expected: dict[str, Eligible]) -> None:
     """Check exact per-file and per-directory inventory plus totals."""
     summary = record(value)
-    if summary["by"] != "tokens":
+    if summary["by"] not in ("tokens",):
         raise ValueError("duplication summary measure changed")
     files = array(summary["files"])
     folders = array(summary["folders"])

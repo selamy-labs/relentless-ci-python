@@ -34,11 +34,11 @@ def test_native_readme_and_source_bound_receipt() -> None:
 
 
 def test_local_links_images_fragments_and_duplicate_headings(tmp_path: Path) -> None:
-    page = write(tmp_path, "docs/page.md", "# Section!\n# Section!\n# Section!\n")
+    page = write(tmp_path, "docs/page.md", "# Section!\n" * 5)
     write(
         tmp_path,
         "README.md",
-        "[one](docs/page.md#section)\n\n[two](docs/page.md#section-1)\n\n[three](docs/page.md#section-2)\n\n![image](logo.png)\n",
+        "[one](docs/page.md#section)\n\n[two](docs/page.md#section-1)\n\n[three](docs/page.md#section-2)\n\n[five](docs/page.md#section-4)\n\n![image](logo.png)\n",
     )
     write(tmp_path, "logo.png", "image")
     verify_document_links(tmp_path)
@@ -46,6 +46,8 @@ def test_local_links_images_fragments_and_duplicate_headings(tmp_path: Path) -> 
         "section",
         "section-1",
         "section-2",
+        "section-3",
+        "section-4",
     }
     assert document("no links").links == []
     assert (
@@ -171,12 +173,13 @@ def test_nonstring_parser_destination_fails() -> None:
     assert "image.png" in document_links.child_links(tokens[1])
 
 
+@pytest.mark.parametrize("token_type", ["A", "z"])
 def test_non_inline_parser_token_cannot_supply_links(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, token_type: str
 ) -> None:
     link = Token("link_open", "a", 1)
     link.attrSet("href", "ignored.md")
-    non_inline = Token("A", "", 0)
+    non_inline = Token(token_type, "", 0)
     non_inline.children = [link]
 
     def parsed(*_args: object) -> list[Token]:
@@ -192,6 +195,13 @@ def test_negative_repeat_counter_cannot_become_first_heading() -> None:
     document_links.remember_heading(anchors, repeats, "Section")
     assert anchors == {"section--1"}
     assert repeats == {"section": 0}
+
+
+def test_link_receipt_has_canonical_key_order(tmp_path: Path) -> None:
+    write(tmp_path, "README.md", "# Heading\n")
+    verify_document_links(tmp_path)
+    receipt = (tmp_path / ".quality-results/document-links.json").read_text()
+    assert receipt.startswith('{"external":')
 
 
 def test_main_uses_repository(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

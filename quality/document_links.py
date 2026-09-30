@@ -57,9 +57,9 @@ def document(text: str) -> Document:
     repeats: dict[str, int] = {}
     links: list[str] = []
     for index, token in enumerate(tokens):
-        if token.type == "inline":
+        if token.type in {"inline"}:
             links.extend(child_links(token))
-        if token.type == "heading_open":
+        if token.type in {"heading_open"}:
             remember_heading(anchors, repeats, tokens[index + 1].content)
     return Document(anchors, links)
 
@@ -76,7 +76,7 @@ def verify_fragment(target: Path, fragment: str, href: str) -> None:
     """A local heading fragment must be present in a Markdown target."""
     if not fragment:
         return
-    if target.suffix.lower() != ".md":
+    if target.suffix.lower() not in {".md"}:
         raise ValueError("heading fragment requires Markdown target")
     if unquote(fragment) not in document(target.read_text(encoding="utf-8")).anchors:
         raise ValueError(f"local documentation heading is missing: {href}")
@@ -96,7 +96,7 @@ def checked_target(root: Path, source: Path, href: str, files: set[Path]) -> str
 
 def markdown_inputs(root: Path, files: set[Path]) -> dict[Path, bytes]:
     """Freeze a nonempty independently discovered authored Markdown inventory."""
-    markdown = sorted(path for path in files if path.suffix.lower() == ".md")
+    markdown = sorted(path for path in files if path.suffix.lower() in {".md"})
     if not markdown:
         raise ValueError("authored Markdown inventory is empty")
     return {path: path.read_bytes() for path in markdown}

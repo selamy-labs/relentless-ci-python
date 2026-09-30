@@ -13,6 +13,7 @@ import pytest
 
 from quality.incomplete import (
     comments,
+    dynamic_api,
     empty_body,
     getattr_arguments,
     module_aliases,
@@ -64,6 +65,13 @@ def test_only_literal_getattr_is_dynamic(function: str) -> None:
     assert getattr_arguments(expression.value) is None
 
 
+def test_dynamic_api_requires_statically_named_base() -> None:
+    expression = ast.parse("getattr(make(), 'skip')").body[0]
+    assert isinstance(expression, ast.Expr)
+    assert isinstance(expression.value, ast.Call)
+    assert dynamic_api(expression.value, {}) is None
+
+
 @pytest.mark.parametrize("error", ["AError", "ZError"])
 def test_other_exception_names_are_complete(tmp_path: Path, error: str) -> None:
     verify_file(
@@ -75,6 +83,12 @@ def test_ast_empty_body_is_not_a_single_placeholder() -> None:
     function = ast.parse("def run():\n    pass\n").body[0]
     assert isinstance(function, ast.FunctionDef)
     function.body = []
+    assert empty_body(function) is False
+
+
+def test_two_statement_body_with_pass_is_not_empty() -> None:
+    function = ast.parse("def run():\n    pass\n    return 1\n").body[0]
+    assert isinstance(function, ast.FunctionDef)
     assert empty_body(function) is False
 
 

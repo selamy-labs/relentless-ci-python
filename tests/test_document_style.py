@@ -23,8 +23,10 @@ def page(root: Path, source: str) -> Path:
 def test_native_all_authored_documents() -> None:
     root = Path.cwd()
     verify_document_style(root)
-    receipt = json.loads((root / ".quality-results/document-style.json").read_text())
+    raw = (root / ".quality-results/document-style.json").read_text()
+    receipt = json.loads(raw)
     assert receipt["versions"] == {"mdformat": "1.0.0", "mdformat-gfm": "1.0.0"}
+    assert raw.startswith('{"files":')
     assert (
         receipt["files"]["README.md"]
         == hashlib.sha256((root / "README.md").read_bytes()).hexdigest()
@@ -63,6 +65,20 @@ def test_wrong_or_missing_formatter_version(
 
     monkeypatch.setattr(importlib.metadata, "version", missing)
     with pytest.raises(ModuleNotFoundError):
+        verify_document_style(tmp_path)
+
+
+def test_newer_unexpected_formatter_version_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    page(tmp_path, "# Header\n")
+    actual = importlib.metadata.version
+
+    def newer(name: str) -> str:
+        return "999.0.0" if name == "mdformat-gfm" else actual(name)
+
+    monkeypatch.setattr(importlib.metadata, "version", newer)
+    with pytest.raises(ValueError, match="formatter version"):
         verify_document_style(tmp_path)
 
 

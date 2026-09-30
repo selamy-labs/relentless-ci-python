@@ -74,7 +74,7 @@ def symbol(node: ast.expr, names: dict[str, str]) -> str | None:
 
 def getattr_arguments(node: ast.Call) -> tuple[ast.expr, ast.expr] | None:
     """Recognize the common literal dynamic-attribute bypass shape."""
-    if not isinstance(node.func, ast.Name) or node.func.id != "getattr":
+    if not isinstance(node.func, ast.Name) or node.func.id not in {"getattr"}:
         return None
     if len(node.args) not in (2, 3):
         return None
@@ -110,7 +110,7 @@ def raises_unimplemented(node: ast.AST) -> bool:
     """Explicit unimplemented raises are never a complete implementation."""
     if isinstance(node, ast.Raise):
         exc = node.exc.func if isinstance(node.exc, ast.Call) else node.exc
-        return isinstance(exc, ast.Name) and exc.id == "NotImplementedError"
+        return isinstance(exc, ast.Name) and exc.id in {"NotImplementedError"}
     return False
 
 
@@ -137,7 +137,7 @@ def unfinished(node: ast.AST) -> bool:
 def comments(source: str, path: Path) -> None:
     """Inspect lexical comments, leaving examples inside strings intact."""
     for token in tokenize.generate_tokens(io.StringIO(source).readline):
-        if token.type == tokenize.COMMENT and (
+        if token.type in {tokenize.COMMENT} and (
             MARKERS.search(token.string) or SUPPRESSIONS.search(token.string)
         ):
             raise ValueError(

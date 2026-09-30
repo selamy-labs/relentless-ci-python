@@ -122,3 +122,31 @@ def test_positive_run_failure_blocks_even_with_expected_output(
     monkeypatch.setattr(readme_example, "command", failed)
     with pytest.raises(ValueError, match="exit status"):
         verify_readme_example(Path.cwd())
+
+
+def test_negative_build_exit_blocks_execution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def stopped(
+        _root: Path, args: list[str], _input: str | None
+    ) -> subprocess.CompletedProcess[str]:
+        assert args == readme_example.BUILD
+        return subprocess.CompletedProcess(args, -9, "", "signal")
+
+    monkeypatch.setattr(readme_example, "command", stopped)
+    with pytest.raises(subprocess.CalledProcessError):
+        verify_readme_example(Path.cwd())
+
+
+def test_lexically_smaller_wrong_output_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def output(
+        _root: Path, args: list[str], _input: str | None
+    ) -> subprocess.CompletedProcess[str]:
+        text = "" if args == readme_example.BUILD else "A\n"
+        return subprocess.CompletedProcess(args, 0, text, "")
+
+    monkeypatch.setattr(readme_example, "command", output)
+    with pytest.raises(ValueError, match="output differs"):
+        verify_readme_example(Path.cwd())

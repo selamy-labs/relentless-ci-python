@@ -51,6 +51,13 @@ def test_equal_but_distinct_root_path_skips_generated_files(tmp_path: Path) -> N
     assert tmp_path / ".venv/ignored.json" not in discovered
 
 
+def test_nested_generated_name_is_not_a_global_exemption(tmp_path: Path) -> None:
+    authored(tmp_path, "quality/config.json", "{}\n")
+    authored(tmp_path, "quality/.venv/invalid.json", "broken JSON")
+    with pytest.raises(ValueError):
+        verify_support(tmp_path)
+
+
 @pytest.mark.parametrize(
     ("name", "content"),
     [

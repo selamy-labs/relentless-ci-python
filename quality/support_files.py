@@ -59,15 +59,15 @@ def read_ini(source: str) -> None:
 def parse(path: Path, source: str) -> None:
     """Select native strict syntax semantics for one enrolled support file."""
     kind = format_of(path)
-    if kind == ".json":
+    if kind in {".json"}:
         json.loads(
             source, object_pairs_hook=unique_object, parse_constant=invalid_constant
         )
-    elif kind == ".toml":
+    elif kind in {".toml"}:
         tomllib.loads(source)
     elif kind in {".yml", ".yaml"}:
         read_yaml(path)
-    elif kind == ".ini":
+    elif kind in {".ini"}:
         read_ini(source)
 
 
@@ -135,7 +135,7 @@ def verify_support(root: Path) -> None:
     output = prepare_output(root)
     contents = support_inputs(root)
     verify_formats(contents)
-    shell(root, [path for path in contents if format_of(path) == ".sh"])
+    shell(root, [path for path in contents if format_of(path) in {".sh"}])
     verify_unchanged(contents)
     output.parent.mkdir(exist_ok=True)
     output.write_text(receipt(root, contents))

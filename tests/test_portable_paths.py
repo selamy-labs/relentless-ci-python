@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from quality.portable_paths import prefixes, verify_path_names
+from quality.portable_paths import prefixes, verify_path_names, verify_python_name
 from quality.source_scope import verify_sources, verify_tracked
 
 
@@ -43,6 +43,10 @@ def test_accepts_portable_shared_directories_and_source_names(tmp_path: Path) ->
 )
 def test_prefixes_include_each_component_once(name: str, expected: list[str]) -> None:
     assert prefixes(name) == expected
+
+
+def test_owned_root_name_is_not_a_python_package() -> None:
+    verify_python_name(Path("RootName/example.py"))
 
 
 @pytest.mark.parametrize(
