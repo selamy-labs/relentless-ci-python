@@ -198,6 +198,27 @@ def test_rejects_extra_file_metadata(tmp_path: Path) -> None:
         verify_duplication_report(value, expected(path))
 
 
+@pytest.mark.parametrize(
+    "field",
+    [
+        "format",
+        "bytes",
+        "complexity",
+        "duplicatedLines",
+        "duplicatedTokens",
+        "lines",
+        "tokens",
+    ],
+)
+def test_rejects_missing_file_metadata(tmp_path: Path, field: str) -> None:
+    path = tmp_path / "check.py"
+    value = native(path)
+    file, _folder = parts(value)
+    del file[field]
+    with pytest.raises(ValueError, match="file fields"):
+        verify_duplication_report(value, expected(path))
+
+
 def test_rejects_later_file_format(tmp_path: Path) -> None:
     path = tmp_path / "check.py"
     value = native(path)
