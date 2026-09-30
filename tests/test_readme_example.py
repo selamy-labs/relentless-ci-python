@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from quality import readme_example
+from quality import package_contents, readme_example
 from quality.readme_example import expected_example, verify_readme_example
 
 
@@ -17,7 +17,7 @@ def test_native_example_and_isolation(
 ) -> None:
     source = Path.cwd()
     readme_example.stage_example(source, tmp_path)
-    assert (tmp_path / "src/relentless_example/cli.py").is_file()
+    assert (tmp_path / "src" / package_contents.MODULE / "cli.py").is_file()
     assert (tmp_path / "README.md").read_bytes() == (source / "README.md").read_bytes()
     verify_readme_example(source)
     monkeypatch.chdir(source)
@@ -31,6 +31,7 @@ def test_native_example_and_isolation(
         ("## Example behavior", "## Other behavior"),
         ("## Example behavior", "## Example behavior\n## Example behavior"),
         ("uv build", "uv publish"),
+        ("uv run --locked {script}", "uv run --locked other-example"),
         ("```sh", "```bash"),
         ("Output is `[[1,8]]`", "Expected result: `[[1,8]]`"),
         (
@@ -47,7 +48,10 @@ def test_changed_readme_fails_before_execution(
     shutil.copy2(source / "README.md", tmp_path / "README.md")
     original = (tmp_path / "README.md").read_text(encoding="utf-8")
     (tmp_path / "README.md").write_text(
-        original.replace(before, after), encoding="utf-8"
+        original.replace(
+            before.replace("{script}", readme_example.reviewed_script()), after
+        ),
+        encoding="utf-8",
     )
 
     def cannot_run(_root: Path, _args: list[str], _input: str | None) -> None:
@@ -60,8 +64,55 @@ def test_changed_readme_fails_before_execution(
 
 def test_claimed_output_is_read_from_readme() -> None:
     text = Path("README.md").read_text(encoding="utf-8")
-    assert expected_example(text) == "[[1,8]]\n"
-    assert expected_example(text.replace("[[1,8]]", "[[2,8]]")) == "[[2,8]]\n"
+    script = readme_example.reviewed_script()
+    assert expected_example(text, script) == "[[1,8]]\n"
+    assert expected_example(text.replace("[[1,8]]", "[[2,8]]"), script) == "[[2,8]]\n"
+
+
+def test_renamed_script_uses_reviewed_package_policy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    readme_example.stage_example(Path.cwd(), tmp_path)
+    readme = tmp_path / "README.md"
+    current_script = readme_example.reviewed_script()
+    readme.write_text(readme.read_text().replace(current_script, "renamed-example"))
+    monkeypatch.setattr(package_contents, "MODULE", "renamed_example")
+    monkeypatch.setattr(
+        package_contents,
+        "ENTRY_POINTS",
+        b"[console_scripts]\nrenamed-example = renamed_example.cli:main\n",
+    )
+    calls: list[list[str]] = []
+
+    def native(
+        _root: Path, args: list[str], _input: str | None
+    ) -> subprocess.CompletedProcess[str]:
+        calls.append(args)
+        output = "[[1,8]]\n" if len(calls) == 2 else ""
+        return subprocess.CompletedProcess(args, 0, output, "")
+
+    monkeypatch.setattr(readme_example, "command", native)
+    verify_readme_example(tmp_path)
+    assert calls == [readme_example.BUILD, [*readme_example.RUN, "renamed-example"]]
+
+
+@pytest.mark.parametrize(
+    ("entry", "module"),
+    [
+        (
+            b"[console_scripts]\nunsafe;name = renamed_example.cli:main\n",
+            "renamed_example",
+        ),
+        (b"[console_scripts]\nrenamed-example = renamed_example.cli:main\n", "other"),
+    ],
+)
+def test_malformed_reviewed_entrypoint_fails(
+    monkeypatch: pytest.MonkeyPatch, entry: bytes, module: str
+) -> None:
+    monkeypatch.setattr(package_contents, "ENTRY_POINTS", entry)
+    monkeypatch.setattr(package_contents, "MODULE", module)
+    with pytest.raises(ValueError, match="reviewed console script"):
+        readme_example.reviewed_script()
 
 
 def test_example_section_stops_at_next_heading() -> None:
@@ -174,16 +225,18 @@ def test_lexically_smaller_wrong_output_fails(
 def test_documented_command_has_bounded_native_execution(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    run = [*readme_example.RUN, readme_example.reviewed_script()]
+
     def native(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
-        assert args == (readme_example.RUN,)
+        assert args == (run,)
         assert kwargs["cwd"] == tmp_path
         assert kwargs["input"] == readme_example.INPUT
         assert kwargs["capture_output"] is True
         assert kwargs["text"] is True
         assert kwargs["timeout"] == 120
         assert "shell" not in kwargs
-        return subprocess.CompletedProcess(readme_example.RUN, 0, "[[1,8]]\n", "")
+        return subprocess.CompletedProcess(run, 0, "[[1,8]]\n", "")
 
     monkeypatch.setattr(subprocess, "run", native)
-    result = readme_example.command(tmp_path, readme_example.RUN, readme_example.INPUT)
+    result = readme_example.command(tmp_path, run, readme_example.INPUT)
     assert result.returncode == 0

@@ -2,7 +2,7 @@
 
 `tests/test_fuzz_cli.py` generates malformed JSON and invalid typed interval
 endpoints with a fixed Hypothesis seed. The public parser receives 200 generated
-examples per family; the installed `relentless-example` command receives 32
+examples per family; the installed `interval-normalizer-generated-py` command receives 32
 generated examples per family. Explicit boundary examples run in addition.
 Each input is at most 512 UTF-8 bytes. Both boundaries must exit or return 2,
 leave stdout empty and emit the precise diagnostic on stderr. The process test

@@ -7,11 +7,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-EXAMPLE = (
-    "mise --yes --locked exec -- uv build\n"
-    "printf '[[5,8],[1,3],[2,6]]' | "
-    "mise --yes --locked exec -- uv run --locked relentless-example"
-)
+from quality import package_contents
+
 BUILD = ["mise", "--yes", "--locked", "exec", "--", "uv", "build"]
 RUN = [
     "mise",
@@ -22,10 +19,30 @@ RUN = [
     "uv",
     "run",
     "--locked",
-    "relentless-example",
 ]
 INPUT = "[[5,8],[1,3],[2,6]]"
 FILES = ("pyproject.toml", "uv.lock", "mise.toml", "mise.lock", "README.md", "LICENSE")
+
+
+def reviewed_script() -> str:
+    """Use the enrolled package entry point, including in renamed templates."""
+    entry = package_contents.ENTRY_POINTS.decode("ascii")
+    match = re.fullmatch(
+        r"\[console_scripts\]\n([a-z][a-z0-9-]*) = ([a-z_][a-z0-9_]*)\.cli:main\n",
+        entry,
+    )
+    if match is None or match.group(2) != package_contents.MODULE:
+        raise ValueError("reviewed console script policy is malformed")
+    return match.group(1)
+
+
+def example_command(script: str) -> str:
+    """Keep the documented command fixed except for its reviewed script name."""
+    return (
+        "mise --yes --locked exec -- uv build\n"
+        "printf '[[5,8],[1,3],[2,6]]' | "
+        f"mise --yes --locked exec -- uv run --locked {script}"
+    )
 
 
 def example_section(text: str) -> str:
@@ -36,11 +53,11 @@ def example_section(text: str) -> str:
     return text.partition(heading)[2].partition("\n## ")[0]
 
 
-def expected_example(text: str) -> str:
+def expected_example(text: str, script: str) -> str:
     """Refuse changed commands before running any documentation code."""
     section = example_section(text)
     blocks = re.findall(r"(?ms)^```sh\n(.*?)^```$", section)
-    if blocks != [EXAMPLE + "\n"]:
+    if blocks != [example_command(script) + "\n"]:
         raise ValueError("README example commands differ from reviewed arguments")
     outputs: list[str] = re.findall(
         r"Output is `([^`]+)` followed by a newline\.", section
@@ -75,7 +92,10 @@ def command(
 
 def verify_readme_example(root: Path) -> None:
     """Build and run the validated README example in an isolated copy."""
-    expected = expected_example((root / "README.md").read_text(encoding="utf-8"))
+    script = reviewed_script()
+    expected = expected_example(
+        (root / "README.md").read_text(encoding="utf-8"), script
+    )
     with tempfile.TemporaryDirectory(prefix="relentless-readme-") as directory:
         stage = Path(directory)
         stage_example(root, stage)
@@ -84,6 +104,6 @@ def verify_readme_example(root: Path) -> None:
             raise subprocess.CalledProcessError(
                 built.returncode, BUILD, built.stdout, built.stderr
             )
-        actual = command(stage, RUN, INPUT)
+        actual = command(stage, [*RUN, script], INPUT)
         if actual.returncode != 0 or actual.stdout != expected:
             raise ValueError("README example exit status or output differs")
