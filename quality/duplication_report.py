@@ -39,7 +39,7 @@ FOLDER_FIELDS = {
 
 def exact_paths(actual: list[str], expected: set[str]) -> None:
     """Neither omissions nor duplicate names can hide behind set comparison."""
-    if len(actual) != len(set(actual)) or set(actual) != expected:
+    if len(actual) > len(set(actual)) or set(actual) != expected:
         raise ValueError("duplication source or folder inventory is incomplete")
 
 
@@ -94,7 +94,7 @@ def verify_file_counts(file: dict[str, object], expected: Eligible) -> None:
     )
     if actual != (expected.bytes, expected.lines, expected.tokens):
         raise ValueError("duplication file receipt differs from eligible source")
-    if file["duplicatedLines"] != 0 or file["duplicatedTokens"] != 0:
+    if file["duplicatedLines"] or file["duplicatedTokens"]:
         raise ValueError("duplication file receipt contains cloned content")
 
 
@@ -146,9 +146,9 @@ def verify_summary(value: object, expected: dict[str, Eligible]) -> None:
 
 def verify_summary_totals(summary: dict[str, object], files: int, folders: int) -> None:
     """Reject truncated native totals despite complete-looking arrays."""
-    if nonnegative(summary["totalFiles"]) != files:
+    if nonnegative(summary["totalFiles"]) - files:
         raise ValueError("duplication summary totals differ from eligible source")
-    if nonnegative(summary["totalFolders"]) != folders:
+    if nonnegative(summary["totalFolders"]) - folders:
         raise ValueError("duplication summary totals differ from eligible source")
 
 

@@ -16,6 +16,7 @@ from quality.security_reports import read_report
 VERSION = "jscpd 5.3.3"
 MAXIMUM_SECONDS = 300.0
 PER_SCAN_SECONDS = 30.0
+SCAN_POLICY = {1: ("1", "100"), 50: ("4", "0")}
 
 
 def native(root: Path, args: list[str], deadline: float) -> str:
@@ -30,7 +31,6 @@ def native(root: Path, args: list[str], deadline: float) -> str:
         capture_output=True,
         text=True,
         timeout=min(PER_SCAN_SECONDS, remaining),
-        check=False,
     )
     if result.returncode != 0:
         raise subprocess.CalledProcessError(
@@ -49,7 +49,7 @@ def scan(
 ) -> object:
     """Use an empty config, explicit format, fixed thresholds and fresh output."""
     output.mkdir(parents=True)
-    high = minimum == 50
+    minimum_lines, threshold = SCAN_POLICY[minimum]
     args = [
         "--config",
         str(config),
@@ -60,9 +60,9 @@ def scan(
         "--min-tokens",
         str(minimum),
         "--min-lines",
-        "4" if high else "1",
+        minimum_lines,
         "--threshold",
-        "0" if high else "100",
+        threshold,
         "--max-size",
         "9007199254740991",
         "--no-gitignore",

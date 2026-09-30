@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypeGuard
 
 from quality.report_data import array, record, text
 
@@ -13,9 +14,14 @@ class Eligible:
     tokens: int
 
 
+def plain_integer(value: object) -> TypeGuard[int]:
+    """JSON bool is an int subclass but cannot be a native count."""
+    return type(value) in {int}
+
+
 def nonnegative(value: object) -> int:
     """JSON booleans and fractional numbers are not inventory counts."""
-    if type(value) is not int or value < 0:
+    if not plain_integer(value) or value < 0:
         raise ValueError("duplication inventory count must be a nonnegative integer")
     return value
 
@@ -53,7 +59,7 @@ def item(value: object, path: Path, content: bytes) -> Eligible:
     verify_identity(file, path, content)
     lines = nonnegative(file["lines"])
     tokens = nonnegative(file["tokens"])
-    if lines == 0 or tokens == 0:
+    if not lines or not tokens:
         raise ValueError("duplication inventory reported empty source metrics")
     return Eligible(len(content), lines, tokens)
 
@@ -64,7 +70,7 @@ def inventory_files(value: object) -> list[object]:
     if summary["by"] != "tokens":
         raise ValueError("duplication inventory summary measure changed")
     files = array(summary["files"])
-    if nonnegative(summary["totalFiles"]) != len(files) or len(files) > 1:
+    if nonnegative(summary["totalFiles"]) - len(files) or len(files) > 1:
         raise ValueError("duplication inventory totals disagree")
     return files
 
@@ -81,4 +87,4 @@ def duplication_inventory(value: object, path: Path, content: bytes) -> Eligible
     if not files:
         empty_inventory(content)
         return None
-    return item(files[0], path, content)
+    return item(next(iter(files)), path, content)

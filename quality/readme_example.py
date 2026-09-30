@@ -33,7 +33,7 @@ def example_section(text: str) -> str:
     heading = "## Example behavior\n"
     if text.count(heading) != 1:
         raise ValueError("README example heading is missing or duplicated")
-    return text.split(heading, 1)[1].split("\n## ", 1)[0]
+    return text.split(heading, 1)[1].partition("\n## ")[0]
 
 
 def expected_example(text: str) -> str:
@@ -47,7 +47,7 @@ def expected_example(text: str) -> str:
     )
     if len(outputs) != 1:
         raise ValueError("README example output claim is missing or duplicated")
-    return outputs[0] + "\n"
+    return next(iter(outputs)) + "\n"
 
 
 def stage_example(root: Path, stage: Path) -> None:
@@ -70,7 +70,6 @@ def command(
         capture_output=True,
         text=True,
         timeout=120,
-        check=False,
     )
 
 

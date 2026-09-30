@@ -34,12 +34,21 @@ def test_complete_inventory_and_strict_formats(tmp_path: Path) -> None:
     authored(tmp_path, ".venv/ignored.json", "invalid JSON")
     authored(tmp_path, "README.md", "A document\n")
     verify_support(tmp_path)
+    verify_support(tmp_path)
     receipt = json.loads((tmp_path / ".quality-results/support-files.json").read_text())
     expected = {
         str(path.relative_to(tmp_path)): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in files
     }
     assert receipt == {"files": expected}
+
+
+def test_equal_but_distinct_root_path_skips_generated_files(tmp_path: Path) -> None:
+    authored(tmp_path, "quality/config.json", "{}\n")
+    authored(tmp_path, ".venv/ignored.json", "broken JSON")
+    discovered = set(support_files.authored(tmp_path, Path(str(tmp_path))))
+    assert tmp_path / "quality/config.json" in discovered
+    assert tmp_path / ".venv/ignored.json" not in discovered
 
 
 @pytest.mark.parametrize(
@@ -78,6 +87,18 @@ def test_invalid_utf8_fails(tmp_path: Path) -> None:
     path.write_bytes(b"\xff")
     with pytest.raises(UnicodeDecodeError):
         verify_support(tmp_path)
+
+
+def test_unenrolled_suffix_does_not_parse_as_ini(tmp_path: Path) -> None:
+    support_files.parse(tmp_path / "sample.abc", "not an INI document")
+
+
+def test_lexically_later_source_drift_fails(tmp_path: Path) -> None:
+    path = authored(tmp_path, "quality/config.json", "{}\n")
+    original = path.read_bytes()
+    path.write_text("~")
+    with pytest.raises(ValueError, match="changed while being checked"):
+        support_files.verify_unchanged({path: original})
 
 
 def test_authored_symlink_fails(tmp_path: Path) -> None:

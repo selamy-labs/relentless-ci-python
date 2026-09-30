@@ -21,7 +21,7 @@ SHELL_SUPPRESSION = re.compile(r"#\s*shellcheck\s+disable\b", re.IGNORECASE)
 def authored(root: Path, directory: Path) -> Iterator[Path]:
     """Ignore only protected generated roots; reject authored links and odd files."""
     for path in directory.iterdir():
-        if directory == root and path.name in GENERATED_ROOTS:
+        if not directory.relative_to(root).parts and path.name in GENERATED_ROOTS:
             continue
         yield from child(root, path)
 

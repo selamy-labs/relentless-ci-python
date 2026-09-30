@@ -19,7 +19,7 @@ def verify_dots(component: str) -> None:
 def verify_characters(component: str) -> None:
     """Reject characters unsupported by the hosted Windows filesystem."""
     if any(
-        character in FORBIDDEN or unicodedata.category(character) == "Cc"
+        character in FORBIDDEN or unicodedata.category(character) in {"Cc"}
         for character in component
     ):
         raise ValueError("repository path contains a forbidden character")
@@ -50,7 +50,7 @@ def prefixes(name: str) -> list[str]:
 
 def verify_path_names(names: list[str]) -> None:
     """Reject empty, repeated, and Unicode/case-colliding tracked paths."""
-    if not names or len(names) != len(set(names)):
+    if not names or len(names) > len(set(names)):
         raise ValueError("repository path inventory is empty or duplicated")
     seen: dict[str, str] = {}
     for name in names:

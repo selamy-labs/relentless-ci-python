@@ -77,10 +77,12 @@ def test_trial_entry_propagates_exact_adapter_status(
     monkeypatch.setattr(subprocess, "run", completed)
     monkeypatch.delitem(sys.modules, "quality.mutation_trial", raising=False)
 
+    from quality.trial_launcher import prepare_launcher
+
+    root = Path(__file__).resolve().parents[1]
+    prepare_launcher(root)
     with pytest.raises(SystemExit) as stopped:
-        runpy.run_module(
-            "quality.mutation_trial", run_name="".join(["__", "main", "__"])
-        )
+        runpy.run_path(str(launcher_path(root)), run_name="__main__")
 
     assert stopped.value.code == status
 
@@ -174,7 +176,7 @@ def test_launcher_is_reproduced_from_current_source_and_replaces_stale_bytes(
 
     expected = prepare_launcher(tmp_path)
 
-    assert expected == b"current source\n"
+    assert expected == b"current source\n\nraise SystemExit(run_trial())\n"
     assert launcher_path(tmp_path).read_bytes() == expected
     require_launcher(tmp_path, expected)
     source.write_bytes(b"candidate mutation\n")

@@ -121,10 +121,11 @@ def empty_body(node: ast.AST) -> bool:
     body = implementation_body(node)
     if len(body) != 1:
         return False
-    return isinstance(body[0], ast.Pass) or (
-        isinstance(body[0], ast.Expr)
-        and isinstance(body[0].value, ast.Constant)
-        and body[0].value.value is Ellipsis
+    sole = next(iter(body))
+    return isinstance(sole, ast.Pass) or (
+        isinstance(sole, ast.Expr)
+        and isinstance(sole.value, ast.Constant)
+        and sole.value.value is Ellipsis
     )
 
 

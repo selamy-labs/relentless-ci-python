@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from quality.portable_paths import verify_path_names
+from quality.portable_paths import prefixes, verify_path_names
 from quality.source_scope import verify_sources, verify_tracked
 
 
@@ -34,6 +34,18 @@ def test_accepts_portable_shared_directories_and_source_names(tmp_path: Path) ->
 
 
 @pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("README.md", ["README.md"]),
+        ("src/a.py", ["src", "src/a.py"]),
+        ("docs/nested/a.md", ["docs", "docs/nested", "docs/nested/a.md"]),
+    ],
+)
+def test_prefixes_include_each_component_once(name: str, expected: list[str]) -> None:
+    assert prefixes(name) == expected
+
+
+@pytest.mark.parametrize(
     "names",
     [
         [],
@@ -43,6 +55,8 @@ def test_accepts_portable_shared_directories_and_source_names(tmp_path: Path) ->
         ["docs/é.md", "docs/e\u0301.md"],
         ["src/straße.py", "src/STRASSE.py"],
         ["src/File", "src/file/child.py"],
+        ["README.md", "readme.md"],
+        ["docs/nested/File.md", "docs/nested/file.md"],
     ],
 )
 def test_rejects_duplicate_or_colliding_paths(names: list[str]) -> None:

@@ -1,15 +1,25 @@
 """Source-aware negative probes for unfinished, disabled and suppressed Python."""
 
+import ast
 import importlib
 import os
 import runpy
 import subprocess
 import sys
+import tokenize
 from pathlib import Path
 
 import pytest
 
-from quality.incomplete import verify_file, verify_incomplete
+from quality.incomplete import (
+    comments,
+    empty_body,
+    getattr_arguments,
+    module_aliases,
+    verify_file,
+    verify_incomplete,
+    verify_node,
+)
 
 
 def authored(root: Path, name: str, source: str) -> Path:
@@ -38,6 +48,72 @@ def test_accepts_completed_code_and_literal_fixture_text(tmp_path: Path) -> None
     path = authored(tmp_path, "quality/check.py", source)
     verify_file(path)
     verify_incomplete(tmp_path)
+
+
+def test_dotted_import_binds_its_first_component() -> None:
+    node = ast.parse("import package.module").body[0]
+    assert isinstance(node, ast.Import)
+    assert module_aliases(node) == {"package": "package.module"}
+
+
+@pytest.mark.parametrize("function", ["alpha", "zeta"])
+def test_only_literal_getattr_is_dynamic(function: str) -> None:
+    expression = ast.parse(f"{function}(pytest, 'skip')").body[0]
+    assert isinstance(expression, ast.Expr)
+    assert isinstance(expression.value, ast.Call)
+    assert getattr_arguments(expression.value) is None
+
+
+@pytest.mark.parametrize("error", ["AError", "ZError"])
+def test_other_exception_names_are_complete(tmp_path: Path, error: str) -> None:
+    verify_file(
+        authored(tmp_path, "quality/check.py", f"def run():\n    raise {error}\n")
+    )
+
+
+def test_ast_empty_body_is_not_a_single_placeholder() -> None:
+    function = ast.parse("def run():\n    pass\n").body[0]
+    assert isinstance(function, ast.FunctionDef)
+    function.body = []
+    assert empty_body(function) is False
+
+
+def test_ellipsis_identity_does_not_accept_custom_equality() -> None:
+    class EqualToEllipsis:
+        def __eq__(self, other: object) -> bool:
+            return other is Ellipsis
+
+    function = ast.parse("def run():\n    ...\n").body[0]
+    assert isinstance(function, ast.FunctionDef)
+    expression = function.body[0]
+    assert isinstance(expression, ast.Expr)
+    expression.value = ast.Constant(value=Ellipsis)
+    field = "value"
+    setattr(expression.value, field, EqualToEllipsis())
+    assert empty_body(function) is False
+
+
+def test_unfinished_comment_reports_line_not_column() -> None:
+    with pytest.raises(ValueError, match=r"check.py:2: unfinished"):
+        comments("value = 1\nvalue = 2  # TODO\n", Path("check.py"))
+
+
+def test_non_comment_token_cannot_supply_a_suppression(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    token = tokenize.TokenInfo(tokenize.COMMENT + 1, "# TODO", (1, 0), (1, 6), "")
+
+    def generated(*_args: object) -> list[tokenize.TokenInfo]:
+        return [token]
+
+    monkeypatch.setattr(tokenize, "generate_tokens", generated)
+    comments("ignored", Path("check.py"))
+
+
+def test_location_defaults_to_zero_for_synthetic_node() -> None:
+    node = ast.Name(id="breakpoint", ctx=ast.Load())
+    with pytest.raises(ValueError, match=r"check.py:0: debug"):
+        verify_node(node, {}, Path("check.py"))
 
 
 @pytest.mark.parametrize(

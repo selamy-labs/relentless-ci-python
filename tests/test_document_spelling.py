@@ -32,6 +32,11 @@ def test_native_all_authored_documents() -> None:
     receipt = json.loads((root / ".quality-results/document-spelling.json").read_text())
     assert receipt["version"] == "typos-cli 1.50.3"
     assert (
+        (root / ".quality-results/document-spelling.json")
+        .read_text()
+        .startswith('{"files":')
+    )
+    assert (
         receipt["files"]["README.md"]
         == hashlib.sha256((root / "README.md").read_bytes()).hexdigest()
     )
@@ -57,6 +62,7 @@ def test_native_typo_survives_ambient_ignore(tmp_path: Path) -> None:
             "inventory differs",
         ),
         ('{"type":"finding","path":"README.md"}', "malformed file"),
+        ('{"type":"a","path":"README.md"}', "malformed file"),
         ('{"type":"file","path":42}', "malformed file"),
         ('{"type":"file","path":"README.md","extra":1}', "malformed record"),
         ("[]", "malformed record"),
@@ -87,6 +93,23 @@ def test_missing_tool_or_wrong_version(
         verify_document_spelling(tmp_path)
 
 
+def test_newer_unexpected_native_version_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixture(tmp_path, "# Document\n")
+
+    def newer(_root: Path, args: list[str]) -> str:
+        if "--version" in args:
+            return "typos-cli 999.0.0\n"
+        if "--files" in args:
+            return '{"type":"file","path":"README.md"}\n'
+        return ""
+
+    monkeypatch.setattr(document_spelling, "tool", newer)
+    with pytest.raises(ValueError, match="version"):
+        verify_document_spelling(tmp_path)
+
+
 def test_nonempty_findings_fail_even_on_native_zero(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -104,8 +127,9 @@ def test_nonempty_findings_fail_even_on_native_zero(
         verify_document_spelling(tmp_path)
 
 
+@pytest.mark.parametrize("replacement", ["changed", "!"])
 def test_source_drift_invalidates_stale_receipt(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, replacement: str
 ) -> None:
     page = fixture(tmp_path, "# Document\n")
     report = tmp_path / ".quality-results/document-spelling.json"
@@ -117,7 +141,7 @@ def test_source_drift_invalidates_stale_receipt(
             return "typos-cli 1.50.3\n"
         if "--files" in args:
             return '{"type":"file","path":"README.md"}\n'
-        page.write_text("changed")
+        page.write_text(replacement)
         return ""
 
     monkeypatch.setattr(document_spelling, "tool", changed)

@@ -100,26 +100,34 @@ def test_rejects_reported_clone(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("field", ["clones", "duplicatedLines", "percentage"])
-def test_rejects_nonzero_or_nonnumeric_metric(tmp_path: Path, field: str) -> None:
+@pytest.mark.parametrize("invalid", [True, False, -1, 1])
+def test_rejects_nonzero_or_nonnumeric_metric(
+    tmp_path: Path, field: str, invalid: object
+) -> None:
     path = tmp_path / "check.py"
     value = native(path)
     statistics = record(value["statistics"])
-    record(statistics["total"])[field] = True
+    record(statistics["total"])[field] = invalid
     with pytest.raises(ValueError, match="invalid zero"):
         verify_duplication_report(value, expected(path))
 
 
 @pytest.mark.parametrize("field", ["sources", "lines", "tokens"])
-def test_rejects_wrong_metric_inventory(tmp_path: Path, field: str) -> None:
+@pytest.mark.parametrize("invalid", [0, 999])
+def test_rejects_wrong_metric_inventory(
+    tmp_path: Path, field: str, invalid: int
+) -> None:
     path = tmp_path / "check.py"
     value = native(path)
     statistics = record(value["statistics"])
-    record(record(statistics["formats"])["python"])[field] = 999
+    record(record(statistics["formats"])["python"])[field] = invalid
     with pytest.raises(ValueError, match="statistics differ"):
         verify_duplication_report(value, expected(path))
 
 
-@pytest.mark.parametrize("change", ["file", "folder", "file-total", "folder-total"])
+@pytest.mark.parametrize(
+    "change", ["file", "folder", "file-total", "folder-total", "folder-total-zero"]
+)
 def test_rejects_missing_summary_inventory(tmp_path: Path, change: str) -> None:
     path = tmp_path / "check.py"
     value = native(path)
@@ -130,13 +138,17 @@ def test_rejects_missing_summary_inventory(tmp_path: Path, change: str) -> None:
         summary["folders"] = []
     elif change == "file-total":
         summary["totalFiles"] = 2
-    else:
+    elif change == "folder-total":
         summary["totalFolders"] = 2
+    else:
+        summary["totalFolders"] = 0
     with pytest.raises(ValueError, match="incomplete|totals"):
         verify_duplication_report(value, expected(path))
 
 
-@pytest.mark.parametrize("field", ["path", "format", "bytes", "duplicatedLines"])
+@pytest.mark.parametrize(
+    "field", ["path", "format", "bytes", "duplicatedLines", "duplicatedTokens"]
+)
 def test_rejects_substituted_file_receipt(tmp_path: Path, field: str) -> None:
     path = tmp_path / "check.py"
     value = native(path)
@@ -146,12 +158,24 @@ def test_rejects_substituted_file_receipt(tmp_path: Path, field: str) -> None:
         verify_duplication_report(value, expected(path))
 
 
-@pytest.mark.parametrize("field", ["path", "files", "bytes", "duplicatedLines"])
-def test_rejects_substituted_folder_receipt(tmp_path: Path, field: str) -> None:
+@pytest.mark.parametrize(
+    ("field", "invalid"),
+    [
+        ("path", "other"),
+        ("files", 0),
+        ("files", 999),
+        ("bytes", 0),
+        ("bytes", 999),
+        ("duplicatedLines", 999),
+    ],
+)
+def test_rejects_substituted_folder_receipt(
+    tmp_path: Path, field: str, invalid: object
+) -> None:
     path = tmp_path / "check.py"
     value = native(path)
     _file, folder = parts(value)
-    folder[field] = "other" if field == "path" else 999
+    folder[field] = invalid
     with pytest.raises(ValueError, match="inventory|folder"):
         verify_duplication_report(value, expected(path))
 
@@ -162,6 +186,52 @@ def test_rejects_folder_schema_change(tmp_path: Path) -> None:
     _file, folder = parts(value)
     folder["extra"] = 1
     with pytest.raises(ValueError, match="folder fields"):
+        verify_duplication_report(value, expected(path))
+
+
+def test_rejects_extra_file_metadata(tmp_path: Path) -> None:
+    path = tmp_path / "check.py"
+    value = native(path)
+    file, _folder = parts(value)
+    file["extra"] = 0
+    with pytest.raises(ValueError, match="file fields"):
+        verify_duplication_report(value, expected(path))
+
+
+def test_rejects_later_file_format(tmp_path: Path) -> None:
+    path = tmp_path / "check.py"
+    value = native(path)
+    file, _folder = parts(value)
+    file["format"] = "zzzz"
+    with pytest.raises(ValueError, match="format"):
+        verify_duplication_report(value, expected(path))
+
+
+def test_rejects_extra_statistics_metric(tmp_path: Path) -> None:
+    path = tmp_path / "check.py"
+    value = native(path)
+    statistics = record(value["statistics"])
+    record(statistics["total"])["extra"] = 0
+    with pytest.raises(ValueError, match="fields"):
+        verify_duplication_report(value, expected(path))
+
+
+def test_rejects_unexpected_extra_format(tmp_path: Path) -> None:
+    path = tmp_path / "check.py"
+    value = native(path)
+    statistics = record(value["statistics"])
+    record(statistics["formats"])["typescript"] = metrics()
+    with pytest.raises(ValueError, match="format inventory"):
+        verify_duplication_report(value, expected(path))
+
+
+def test_rejects_duplicate_reported_path(tmp_path: Path) -> None:
+    path = tmp_path / "check.py"
+    value = native(path)
+    summary = record(value["summary"])
+    array(summary["files"]).append(deepcopy(array(summary["files"])[0]))
+    summary["totalFiles"] = 2
+    with pytest.raises(ValueError, match="incomplete"):
         verify_duplication_report(value, expected(path))
 
 
@@ -179,4 +249,20 @@ def test_rejects_report_metadata_change(tmp_path: Path, change: str) -> None:
     else:
         del record(statistics["total"])["tokens"]
     with pytest.raises(ValueError, match="timezone|format|measure|fields"):
+        verify_duplication_report(value, expected(path))
+
+
+def test_rejects_later_summary_measure(tmp_path: Path) -> None:
+    path = tmp_path / "check.py"
+    value = native(path)
+    record(value["summary"])["by"] = "zzzz"
+    with pytest.raises(ValueError, match="measure"):
+        verify_duplication_report(value, expected(path))
+
+
+def test_rejects_zero_file_total(tmp_path: Path) -> None:
+    path = tmp_path / "check.py"
+    value = native(path)
+    record(value["summary"])["totalFiles"] = 0
+    with pytest.raises(ValueError, match="totals"):
         verify_duplication_report(value, expected(path))

@@ -1,6 +1,7 @@
 """Reject substituted, omitted, and malformed native scanner inventory."""
 
 from copy import deepcopy
+from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 import pytest
@@ -42,6 +43,13 @@ def test_accepts_exact_native_file_inventory(tmp_path: Path) -> None:
     )
 
 
+def test_eligible_receipt_cannot_be_rewritten() -> None:
+    value = Eligible(5, 4, 50)
+    field = "tokens"
+    with pytest.raises(FrozenInstanceError):
+        setattr(value, field, 49)
+
+
 @pytest.mark.parametrize("bad", [True, 1.5, -1, "3"])
 def test_rejects_noninteger_counts(bad: object) -> None:
     with pytest.raises(ValueError, match="nonnegative integer"):
@@ -52,8 +60,11 @@ def test_rejects_noninteger_counts(bad: object) -> None:
     ("field", "bad", "message"),
     [
         ("path", "/other.py", "identity"),
+        ("path", "/zzzz.py", "identity"),
         ("format", "javascript", "identity"),
+        ("format", "zzzz", "identity"),
         ("bytes", 42, "bytes"),
+        ("bytes", 1, "bytes"),
         ("complexity", -1, "nonnegative"),
         ("duplicatedLines", -1, "nonnegative"),
         ("duplicatedTokens", -1, "nonnegative"),
@@ -83,15 +94,21 @@ def test_rejects_file_schema_change(tmp_path: Path, change: str) -> None:
         duplication_inventory(value, path, b"pass\n")
 
 
-@pytest.mark.parametrize("change", ["measure", "total", "duplicate"])
+@pytest.mark.parametrize(
+    "change", ["measure", "measure-later", "total", "total-zero", "duplicate"]
+)
 def test_rejects_incomplete_native_summary(tmp_path: Path, change: str) -> None:
     path = tmp_path / "check.py"
     value = report(path, b"pass\n")
     summary = record(value["summary"])
     if change == "measure":
         summary["by"] = "lines"
+    elif change == "measure-later":
+        summary["by"] = "zzzz"
     elif change == "total":
         summary["totalFiles"] = 2
+    elif change == "total-zero":
+        summary["totalFiles"] = 0
     else:
         array(summary["files"]).append(deepcopy(file(value)))
         summary["totalFiles"] = 2

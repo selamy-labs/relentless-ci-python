@@ -35,7 +35,8 @@ def destination(child: Token) -> str | None:
     """Require the parser's link destination to be a real string."""
     if child.type not in {"link_open", "image"}:
         return None
-    href = child.attrGet("href" if child.type == "link_open" else "src")
+    attribute = {"link_open": "href", "image": "src"}[child.type]
+    href = child.attrGet(attribute)
     if not isinstance(href, str):
         raise ValueError("Markdown link destination must be a string")
     return href

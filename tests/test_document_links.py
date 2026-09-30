@@ -34,15 +34,19 @@ def test_native_readme_and_source_bound_receipt() -> None:
 
 
 def test_local_links_images_fragments_and_duplicate_headings(tmp_path: Path) -> None:
-    page = write(tmp_path, "docs/page.md", "# Section!\n# Section!\n")
+    page = write(tmp_path, "docs/page.md", "# Section!\n# Section!\n# Section!\n")
     write(
         tmp_path,
         "README.md",
-        "[one](docs/page.md#section)\n\n[two](docs/page.md#section-1)\n\n![image](logo.png)\n",
+        "[one](docs/page.md#section)\n\n[two](docs/page.md#section-1)\n\n[three](docs/page.md#section-2)\n\n![image](logo.png)\n",
     )
     write(tmp_path, "logo.png", "image")
     verify_document_links(tmp_path)
-    assert document(page.read_text()).anchors == {"section", "section-1"}
+    assert document(page.read_text()).anchors == {
+        "section",
+        "section-1",
+        "section-2",
+    }
     assert document("no links").links == []
     assert (
         checked_target(tmp_path, tmp_path / "README.md", "", {tmp_path / "README.md"})
@@ -57,20 +61,26 @@ def test_local_links_images_fragments_and_duplicate_headings(tmp_path: Path) -> 
         ("../outside.md", "target is missing"),
         ("https://host/doc", ""),
         ("ftp://host/doc", "unsupported"),
+        ("ftp:docs/page.md", "unsupported"),
         ("docs/page.md?query=1", "unsupported"),
         ("docs/page.md#missing", "heading is missing"),
         ("logo.png#heading", "requires Markdown"),
+        ("logo.aa#present", "requires Markdown"),
     ],
 )
 def test_link_resolution_fail_closed(tmp_path: Path, href: str, message: str) -> None:
     source = write(tmp_path, "README.md", "# Readme\n")
     page = write(tmp_path, "docs/page.md", "# Present\n")
     image = write(tmp_path, "logo.png", "image")
+    earlier = write(tmp_path, "logo.aa", "# Present\n")
     if href.startswith("https:"):
-        assert checked_target(tmp_path, source, href, {source, page, image}) == href
+        assert (
+            checked_target(tmp_path, source, href, {source, page, image, earlier})
+            == href
+        )
     else:
         with pytest.raises(ValueError, match=message):
-            checked_target(tmp_path, source, href, {source, page, image})
+            checked_target(tmp_path, source, href, {source, page, image, earlier})
 
 
 def test_percent_encoded_local_path(tmp_path: Path) -> None:
@@ -127,6 +137,22 @@ def test_changed_source_removes_stale_receipt(
     assert not output.exists()
 
 
+def test_lexically_smaller_source_drift_is_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    page = write(tmp_path, "README.md", "[link](page.md)\n")
+    write(tmp_path, "page.md", "# Original\n")
+    original = document_links.checked_target
+
+    def changed(root: Path, source: Path, href: str, files: set[Path]) -> str | None:
+        page.write_text("A")
+        return original(root, source, href, files)
+
+    monkeypatch.setattr(document_links, "checked_target", changed)
+    with pytest.raises(ValueError, match="changed while being checked"):
+        verify_document_links(tmp_path)
+
+
 def test_symlinked_authored_file_fails(tmp_path: Path) -> None:
     write(tmp_path, "README.md", "# Valid\n")
     (tmp_path / "copy.md").symlink_to("README.md")
@@ -143,6 +169,29 @@ def test_nonstring_parser_destination_fails() -> None:
         document_links.child_links(inline)
     tokens = MarkdownIt("commonmark").parse("![alt](image.png)")
     assert "image.png" in document_links.child_links(tokens[1])
+
+
+def test_non_inline_parser_token_cannot_supply_links(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    link = Token("link_open", "a", 1)
+    link.attrSet("href", "ignored.md")
+    non_inline = Token("A", "", 0)
+    non_inline.children = [link]
+
+    def parsed(*_args: object) -> list[Token]:
+        return [non_inline]
+
+    monkeypatch.setattr(MarkdownIt, "parse", parsed)
+    assert document("ignored").links == []
+
+
+def test_negative_repeat_counter_cannot_become_first_heading() -> None:
+    anchors: set[str] = set()
+    repeats = {"section": -1}
+    document_links.remember_heading(anchors, repeats, "Section")
+    assert anchors == {"section--1"}
+    assert repeats == {"section": 0}
 
 
 def test_main_uses_repository(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -110,8 +110,9 @@ def test_redirected_receipt_fails(tmp_path: Path, parent: bool) -> None:
         verify_document_style(tmp_path)
 
 
+@pytest.mark.parametrize("replacement", ["changed", "!"])
 def test_source_drift_removes_stale_receipt(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, replacement: str
 ) -> None:
     target = page(tmp_path, "# Header\n")
     output = tmp_path / ".quality-results/document-style.json"
@@ -119,7 +120,7 @@ def test_source_drift_removes_stale_receipt(
     output.write_text("stale")
 
     def drift(_inputs: dict[Path, bytes]) -> None:
-        target.write_text("changed")
+        target.write_text(replacement)
 
     monkeypatch.setattr(document_style, "verify_format", drift)
     with pytest.raises(ValueError, match="changed while style"):

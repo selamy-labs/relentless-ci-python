@@ -64,6 +64,11 @@ def test_claimed_output_is_read_from_readme() -> None:
     assert expected_example(text.replace("[[1,8]]", "[[2,8]]")) == "[[2,8]]\n"
 
 
+def test_example_section_stops_at_next_heading() -> None:
+    text = "## Example behavior\nExample\n## Other section\nLater\n"
+    assert readme_example.example_section(text) == "Example"
+
+
 @pytest.mark.parametrize(
     ("build", "run", "error"),
     [
@@ -101,4 +106,19 @@ def test_missing_native_tool_fails(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(readme_example, "command", missing)
     with pytest.raises(FileNotFoundError, match="mise"):
+        verify_readme_example(Path.cwd())
+
+
+def test_positive_run_failure_blocks_even_with_expected_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def failed(
+        _root: Path, args: list[str], _input: str | None
+    ) -> subprocess.CompletedProcess[str]:
+        if args == readme_example.BUILD:
+            return subprocess.CompletedProcess(args, 0, "", "")
+        return subprocess.CompletedProcess(args, 1, "[[1,8]]\n", "")
+
+    monkeypatch.setattr(readme_example, "command", failed)
+    with pytest.raises(ValueError, match="exit status"):
         verify_readme_example(Path.cwd())
