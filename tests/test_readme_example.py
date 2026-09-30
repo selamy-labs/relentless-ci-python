@@ -69,6 +69,11 @@ def test_example_section_stops_at_next_heading() -> None:
     assert readme_example.example_section(text) == "Example"
 
 
+def test_example_section_rejects_missing_heading() -> None:
+    with pytest.raises(ValueError, match="heading is missing"):
+        readme_example.example_section("## Other behavior\nExample\n")
+
+
 @pytest.mark.parametrize(
     ("build", "run", "error"),
     [
