@@ -1499,7 +1499,7 @@ wheels = [
 ]
 
 [[package]]
-name = "relentless-ci-python"
+name = "interval-normalizer-generated-py"
 version = "0.1.0"
 source = { editable = "." }
 

@@ -5,7 +5,7 @@ from pathlib import Path
 from quality.package_archive import sdist_files, wheel_files
 from quality.package_metadata import identity, metadata, verify_record, wheel_metadata
 
-MODULE = "relentless_example"
+MODULE = "interval_normalizer_generated_py"
 SOURCE_FILES = (
     "__init__.py",
     "cli.py",
@@ -13,7 +13,11 @@ SOURCE_FILES = (
     "validation.py",
     "py.typed",
 )
-ENTRY_POINTS = b"[console_scripts]\nrelentless-example = relentless_example.cli:main\n"
+ENTRY_POINTS = (
+    b"[console_scripts]\n"
+    b"interval-normalizer-generated-py = "
+    b"interval_normalizer_generated_py.cli:main\n"
+)
 
 
 def public_sources(root: Path) -> dict[str, bytes]:

@@ -10,20 +10,20 @@ requires = [
 build-backend = "hatchling.build"
 
 [project]
-name = "relentless-ci-python"
+name = "interval-normalizer-generated-py"
 version = "0.1.0"
 description = "A strict, framework-neutral Python starting point"
 requires-python = ">=3.11,<3.15"
 license = "MIT"
 
 [project.scripts]
-relentless-example = "relentless_example.cli:main"
+interval-normalizer-generated-py = "interval_normalizer_generated_py.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/relentless_example"]
+packages = ["src/interval_normalizer_generated_py"]
 
 [tool.hatch.build.targets.sdist]
-include = ["/src/relentless_example", "/LICENSE", "/README.md", "/pyproject.toml"]
+include = ["/src/interval_normalizer_generated_py", "/LICENSE", "/README.md", "/pyproject.toml"]
 
 [dependency-groups]
 build = ["hatchling==1.32.4"]

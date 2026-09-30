@@ -2,7 +2,7 @@
 
 import pytest
 
-from relentless_example import normalize
+from interval_normalizer_generated_py import normalize
 
 
 @pytest.mark.parametrize(

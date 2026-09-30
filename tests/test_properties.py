@@ -3,7 +3,7 @@
 from hypothesis import given
 from hypothesis import strategies as st
 
-from relentless_example import normalize
+from interval_normalizer_generated_py import normalize
 
 range_pairs = st.tuples(st.integers(-20, 19), st.integers(1, 20))
 

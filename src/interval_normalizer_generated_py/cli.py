@@ -4,7 +4,7 @@ import json
 import sys
 from typing import TextIO
 
-from relentless_example import normalize
+from interval_normalizer_generated_py import normalize
 
 
 def read_document(stdin: TextIO) -> object:
