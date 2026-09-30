@@ -17,7 +17,7 @@ are replaced, and missing or changed copies fail. The reproduction command is
 The launcher runs exactly `python -m pytest -x -q --color=no`.
 The adapter retains pytest stdout, stderr and
 its signed exit status in a fresh JSON record inside the native result. It does
-not select tests, change operators or change the native 30-second trial limit.
+not select tests or change operators. The native trial limit is 60 seconds.
 Credit requires actual pytest status 1, empty stderr, a completed `FAILED tests/`
 record and the exact one-failure summary. Signals, arbitrary nonzero exits,
 runtime diagnostics, duplicate JSON keys and missing or malformed records fail.
@@ -37,21 +37,27 @@ Raw report validation reads a private temporary copy and never opens the
 original database for writes. This avoids platform-dependent SQLite URI
 handling while preserving the exact complete-result check.
 
-Individual trials have a 30-second limit. Initialization and baseline use the
+Individual trials have a 60-second limit. Initialization and baseline use the
 ordinary 1,800-second command deadline. Full mutation execution has a separate
-9,000-second deadline in `quality/mutation-timeout.json`. These deadlines bound
+14,400-second deadline in `quality/mutation-timeout.json`. These deadlines bound
 execution; reaching one never counts as a killed mutant or a successful gate.
 The separate execution budget accommodates the complete verifier mutation plan.
 The first hosted Linux matrix, on standard four-CPU runners, retained between
 2,178 and 2,783 of 2,798 raw results at the former 3,600-second deadline.
 All four jobs failed. The earlier 6,000-second bound covered that inventory.
-After broad gate enrollment expanded the plan to 4,140 mutants, an isolated
+After broad gate enrollment expanded the plan to 4,142 mutants, an isolated
 Linux run produced 635 killed outcomes in about 17 minutes of execution; its
-projected whole-pool duration exceeded 6,000 seconds. The partial raw database
-is retained in the implementation register. The 9,000-second capacity allows
-the complete plan and shared-runner variance while keeping the 30-second trial
-bound, scope, outcome rules and result-integrity checks unchanged. Partial
-outcomes establish throughput only, not a mutation pass.
+projected whole-pool duration exceeded 6,000 seconds. A subsequent run completed
+the native plan under the 9,000-second pool bound but retained 299 trial outputs
+equal to `timeout`, despite Cosmic Ray labelling those results killed. The strict
+validator rejected the run. The full baseline completes in about 20 seconds on
+this host, leaving too little headroom for a 30-second trial when a mutant
+survives most tests or workers contend for CPU. The 60-second trial and
+14,400-second whole-pool bounds provide capacity to classify those results; a
+timeout still fails and is never counted as a kill. The hosted Linux analysis
+job has a corresponding 260-minute outer bound. These changes do not reduce the
+test inventory, mutation scope or operators, nor weaken result validation.
+Partial outcomes establish throughput only, not a mutation pass.
 
 Run the same full local verifier described in the README. It requires no paid
 service or account credentials for mutation analysis. Hosted matrix enforcement

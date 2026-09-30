@@ -177,7 +177,7 @@ def test_all_stops_precede_waits_and_all_failures_are_retained(
             raise stop_error
 
     def finish(owned: OwnedCommand, timeout: float) -> None:
-        assert timeout == 39
+        assert timeout == 69
         events.append(("finish", owned.directory))
         if owned is workers[0].owned:
             raise finish_error
