@@ -3,6 +3,7 @@
 import pytest
 
 from quality.test_ordering import priority
+from tests import conftest
 from tests.conftest import pytest_collection_modifyitems
 
 
@@ -57,3 +58,12 @@ def test_constructed_cleanup_identity_has_value_equality() -> None:
     )
 
     assert priority(node) == (True, node)
+
+
+def test_collection_rejects_broken_native_receipt_priority(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(conftest, "priority", lambda node: (False, node))
+
+    with pytest.raises(RuntimeError, match="native receipt ordering contract failed"):
+        pytest_collection_modifyitems([])
