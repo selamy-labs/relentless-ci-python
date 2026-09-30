@@ -40,15 +40,13 @@ results. Failed, skipped, cancelled or missing results fail its shell check.
 Analysis receipts are retained for seven days even on failure. Daily main runs
 repeat the checks to detect newly disclosed dependency vulnerabilities.
 
-The published `main` revision has an initial hosted failure in Windows package
-checks. The repair PR passed all 17 hosted jobs at its earlier head, while the
-capacity-adjusted PR and exact-main rerun remain pending. The protected branch
-strictly requires the aggregate `Relentless CI gate` from the GitHub Actions App.
-This is interim enforcement: a dedicated trusted-policy check, source-bound
-maintainer rationale, and live bypass probes remain outstanding. The
+The protected branch requires the aggregate `Relentless CI gate` from the
+GitHub Actions App. This is interim enforcement. Publication also requires a
+dedicated trusted-policy check, source-bound maintainer rationale, live bypass
+probes and full CI success at the exact published `main` revision. The
 `CODEOWNERS` file assigns the whole repository, including `.github`, to two
-administrators. Code-owner review is not enforced until this file is on
-protected `main` and that branch's review setting is enabled and read back.
+administrators. Its review rule takes effect only after this file is on
+protected `main` and the native review setting is enabled and read back.
 
 The offline [runtime-support gate](runtimes.md) also requires both Python
 matrices and package metadata to match a current reviewed upstream snapshot.
