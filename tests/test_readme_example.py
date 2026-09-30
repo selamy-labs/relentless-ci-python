@@ -150,3 +150,21 @@ def test_lexically_smaller_wrong_output_fails(
     monkeypatch.setattr(readme_example, "command", output)
     with pytest.raises(ValueError, match="output differs"):
         verify_readme_example(Path.cwd())
+
+
+def test_documented_command_has_bounded_native_execution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def native(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        assert args == (readme_example.RUN,)
+        assert kwargs["cwd"] == tmp_path
+        assert kwargs["input"] == readme_example.INPUT
+        assert kwargs["capture_output"] is True
+        assert kwargs["text"] is True
+        assert kwargs["timeout"] == 120
+        assert "shell" not in kwargs
+        return subprocess.CompletedProcess(readme_example.RUN, 0, "[[1,8]]\n", "")
+
+    monkeypatch.setattr(subprocess, "run", native)
+    result = readme_example.command(tmp_path, readme_example.RUN, readme_example.INPUT)
+    assert result.returncode == 0
