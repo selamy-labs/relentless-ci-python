@@ -203,6 +203,18 @@ def test_rejects_folder_schema_change(tmp_path: Path) -> None:
         verify_duplication_report(value, expected(path))
 
 
+@pytest.mark.parametrize(
+    "field", ["bytes", "complexity", "duplicatedLines", "files", "lines", "tokens"]
+)
+def test_rejects_missing_folder_metadata(tmp_path: Path, field: str) -> None:
+    path = tmp_path / "check.py"
+    value = native(path)
+    _file, folder = parts(value)
+    del folder[field]
+    with pytest.raises(ValueError, match="folder fields"):
+        verify_duplication_report(value, expected(path))
+
+
 def test_rejects_extra_file_metadata(tmp_path: Path) -> None:
     path = tmp_path / "check.py"
     value = native(path)
