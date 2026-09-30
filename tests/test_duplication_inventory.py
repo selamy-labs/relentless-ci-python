@@ -43,6 +43,14 @@ def test_accepts_exact_native_file_inventory(tmp_path: Path) -> None:
     )
 
 
+def test_accepts_large_native_byte_count(tmp_path: Path) -> None:
+    path = tmp_path / "quality" / "check.py"
+    content = b"pass\n" * 60
+    assert duplication_inventory(report(path, content), path, content) == Eligible(
+        len(content), 5, 50
+    )
+
+
 def test_eligible_receipt_cannot_be_rewritten() -> None:
     value = Eligible(5, 4, 50)
     field = "tokens"
