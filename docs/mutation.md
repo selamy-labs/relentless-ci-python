@@ -39,14 +39,19 @@ handling while preserving the exact complete-result check.
 
 Individual trials have a 30-second limit. Initialization and baseline use the
 ordinary 1,800-second command deadline. Full mutation execution has a separate
-6,000-second deadline in `quality/mutation-timeout.json`. These deadlines bound
+9,000-second deadline in `quality/mutation-timeout.json`. These deadlines bound
 execution; reaching one never counts as a killed mutant or a successful gate.
 The separate execution budget accommodates the complete verifier mutation plan.
 The first hosted Linux matrix, on standard four-CPU runners, retained between
 2,178 and 2,783 of 2,798 raw results at the former 3,600-second deadline.
-All four jobs failed. The 6,000-second bound covers that measured throughput
-with shared-runner variance while keeping the 30-second trial bound and every
-mutant, test and result-integrity check unchanged.
+All four jobs failed. The earlier 6,000-second bound covered that inventory.
+After broad gate enrollment expanded the plan to 4,140 mutants, an isolated
+Linux run produced 635 killed outcomes in about 17 minutes of execution; its
+projected whole-pool duration exceeded 6,000 seconds. The partial raw database
+is retained in the implementation register. The 9,000-second capacity allows
+the complete plan and shared-runner variance while keeping the 30-second trial
+bound, scope, outcome rules and result-integrity checks unchanged. Partial
+outcomes establish throughput only, not a mutation pass.
 
 Run the same full local verifier described in the README. It requires no paid
 service or account credentials for mutation analysis. Hosted matrix enforcement

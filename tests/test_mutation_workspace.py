@@ -122,6 +122,33 @@ def test_nested_cleanup_failures_remain_unproven(tmp_path: Path) -> None:
     )
 
 
+@pytest.mark.parametrize("fails", [False, True])
+def test_workspace_archive_preserves_recursive_fixture_symlink(
+    tmp_path: Path, fails: bool
+) -> None:
+    target: Path | None = None
+    if fails:
+        with pytest.raises(RuntimeError, match="trial failed"):
+            with workspace(tmp_path) as target:
+                (target / "fixture").mkdir()
+                (target / "fixture/again").symlink_to(".", target_is_directory=True)
+                (target / "mutation.sqlite").write_bytes(b"raw results")
+                raise RuntimeError("trial failed")
+    else:
+        with workspace(tmp_path) as target:
+            (target / "fixture").mkdir()
+            (target / "fixture/again").symlink_to(".", target_is_directory=True)
+            (target / "mutation.sqlite").write_bytes(b"raw results")
+    assert target is not None
+    assert not target.exists()
+    prefix = "mutation-failure-*" if fails else "mutation-success-*"
+    (archive,) = (tmp_path / ".quality-results").glob(prefix)
+    copied = archive / "workspace"
+    assert (copied / "fixture/again").is_symlink()
+    assert (copied / "fixture/again").readlink() == Path(".")
+    assert (copied / "mutation.sqlite").read_bytes() == b"raw results"
+
+
 def test_failed_archive_retains_original_evidence(tmp_path: Path) -> None:
     target: Path | None = None
     failure = RuntimeError("trial failed")

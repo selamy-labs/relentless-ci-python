@@ -63,7 +63,7 @@ configuration, then starts up to eight isolated HTTP worker copies. Each worker
 uses its own source and Python import path. The coordinator derives only the
 HTTP transport settings and reads them back independently; source scope,
 operators, test command and 30-second trial deadline remain unchanged. Complete
-execution uses the reviewed 6000-second whole-pool deadline. Worker service
+execution uses the reviewed 9000-second whole-pool deadline. Worker service
 lifetime and shutdown allowances bound startup and cleanup, and cannot turn a
 failed execution into a pass.
 
@@ -83,5 +83,5 @@ mutation scope. An independent probe kept all 490 prior completed identifiers
 and baseline success while reducing one workflow-defect failure from 7.33 to
 4.21 seconds. That optimization did not change the then-current 3600-second
 pool or 30-second trial deadlines, and did not use cached outcomes. The later
-hosted throughput review and current 6000-second pool bound are documented in
+hosted throughput review and current 9000-second pool bound are documented in
 `docs/mutation.md`; the per-mutant bound remains 30 seconds.
