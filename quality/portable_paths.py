@@ -48,16 +48,22 @@ def prefixes(name: str) -> list[str]:
     return ["/".join(parts[:index]) for index in range(1, len(parts) + 1)]
 
 
-def verify_path_names(names: list[str]) -> None:
-    """Reject empty, repeated, and Unicode/case-colliding tracked paths."""
+def verify_unique_names(names: list[str]) -> None:
+    """Reject empty or exactly repeated tracked path inventories."""
     if not names:
         raise ValueError("repository path inventory is empty or duplicated")
-    seen: dict[str, str] = {}
     names_seen: set[str] = set()
     for name in names:
         if name in names_seen:
             raise ValueError("repository path inventory is empty or duplicated")
         names_seen.add(name)
+
+
+def verify_path_names(names: list[str]) -> None:
+    """Reject empty, repeated, and Unicode/case-colliding tracked paths."""
+    verify_unique_names(names)
+    seen: dict[str, str] = {}
+    for name in names:
         for prefix in prefixes(name):
             remember(seen, prefix)
 
