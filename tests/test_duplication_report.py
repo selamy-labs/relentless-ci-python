@@ -159,6 +159,20 @@ def test_rejects_substituted_file_receipt(tmp_path: Path, field: str) -> None:
 
 
 @pytest.mark.parametrize(
+    ("field", "lower"), [("bytes", 8), ("lines", 4), ("tokens", 49)]
+)
+def test_rejects_underreported_file_counts(
+    tmp_path: Path, field: str, lower: int
+) -> None:
+    path = tmp_path / "check.py"
+    value = native(path)
+    file, _folder = parts(value)
+    file[field] = lower
+    with pytest.raises(ValueError, match="eligible source"):
+        verify_duplication_report(value, expected(path))
+
+
+@pytest.mark.parametrize(
     ("field", "invalid"),
     [
         ("path", "other"),
