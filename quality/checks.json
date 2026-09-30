@@ -15,6 +15,36 @@
     "quality.workflows_main"
   ],
   [
+    "python",
+    "-m",
+    "quality.support_files_main"
+  ],
+  [
+    "python",
+    "-m",
+    "quality.readme_example_main"
+  ],
+  [
+    "python",
+    "-m",
+    "quality.document_links_main"
+  ],
+  [
+    "python",
+    "-m",
+    "quality.document_spelling_main"
+  ],
+  [
+    "python",
+    "-m",
+    "quality.document_style_main"
+  ],
+  [
+    "python",
+    "-m",
+    "quality.incomplete_main"
+  ],
+  [
     "uv",
     "export",
     "--locked",
@@ -36,6 +66,11 @@
     "python",
     "-m",
     "quality.package_main"
+  ],
+  [
+    "python",
+    "-m",
+    "quality.duplication_main"
   ],
   [
     "black",

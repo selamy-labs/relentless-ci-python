@@ -13,8 +13,9 @@ def prepare_launcher(root: Path) -> bytes:
     source = (root / "quality" / "mutation_trial.py").read_bytes()
     path = launcher_path(root)
     path.parent.mkdir(exist_ok=True)
-    path.write_bytes(source)
-    return source
+    launcher = source + b"\nraise SystemExit(run_trial())\n"
+    path.write_bytes(launcher)
+    return launcher
 
 
 def require_launcher(root: Path, expected: bytes) -> None:

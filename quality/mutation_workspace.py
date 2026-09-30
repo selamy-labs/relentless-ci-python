@@ -24,7 +24,7 @@ def preserve_failure(root: Path, target: Path, error: BaseException) -> None:
     output = root / ".quality-results"
     output.mkdir(exist_ok=True)
     retained = Path(mkdtemp(prefix="mutation-failure-", dir=output))
-    shutil.copytree(target, retained / "workspace")
+    shutil.copytree(target, retained / "workspace", symlinks=True)
     (retained / "failure.json").write_text(
         json.dumps(
             {
@@ -51,7 +51,7 @@ def preserve_success(root: Path, target: Path) -> None:
     output = root / ".quality-results"
     output.mkdir(exist_ok=True)
     retained = Path(mkdtemp(prefix="mutation-success-", dir=output))
-    shutil.copytree(target, retained / "workspace")
+    shutil.copytree(target, retained / "workspace", symlinks=True)
 
 
 @contextmanager

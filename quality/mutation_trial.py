@@ -4,8 +4,6 @@ import json
 import subprocess
 import sys
 
-MAIN_MODULE = "__main__"
-
 
 def run_trial() -> int:
     """The native Cosmic Ray deadline still bounds this whole process group."""
@@ -27,7 +25,3 @@ def run_trial() -> int:
     if result.stderr:
         return 2
     return result.returncode
-
-
-if __name__ == MAIN_MODULE:
-    raise SystemExit(run_trial())
