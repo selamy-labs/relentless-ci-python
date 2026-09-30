@@ -138,6 +138,20 @@ def test_negative_build_exit_blocks_execution(
         verify_readme_example(Path.cwd())
 
 
+def test_negative_run_exit_blocks_even_with_expected_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def stopped(
+        _root: Path, args: list[str], _input: str | None
+    ) -> subprocess.CompletedProcess[str]:
+        code = 0 if args == readme_example.BUILD else -9
+        return subprocess.CompletedProcess(args, code, "[[1,8]]\n", "signal")
+
+    monkeypatch.setattr(readme_example, "command", stopped)
+    with pytest.raises(ValueError, match="exit status"):
+        verify_readme_example(Path.cwd())
+
+
 def test_lexically_smaller_wrong_output_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
