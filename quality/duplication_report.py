@@ -146,9 +146,9 @@ def verify_summary(value: object, expected: dict[str, Eligible]) -> None:
 
 def verify_summary_totals(summary: dict[str, object], files: int, folders: int) -> None:
     """Reject truncated native totals despite complete-looking arrays."""
-    if nonnegative(summary["totalFiles"]) - files:
+    if nonnegative(summary["totalFiles"]) != files:
         raise ValueError("duplication summary totals differ from eligible source")
-    if nonnegative(summary["totalFolders"]) - folders:
+    if nonnegative(summary["totalFolders"]) != folders:
         raise ValueError("duplication summary totals differ from eligible source")
 
 
