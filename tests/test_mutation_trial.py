@@ -67,7 +67,7 @@ def test_trial_launch_error_cannot_emit_a_completed_record(
 
 @pytest.mark.parametrize("status", [0, 1, 2, -9])
 def test_trial_entry_propagates_exact_adapter_status(
-    monkeypatch: pytest.MonkeyPatch, status: int
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, status: int
 ) -> None:
     def completed(
         command: list[str], **_options: bool
@@ -79,10 +79,14 @@ def test_trial_entry_propagates_exact_adapter_status(
 
     from quality.trial_launcher import prepare_launcher
 
-    root = Path(__file__).resolve().parents[1]
-    prepare_launcher(root)
+    source = tmp_path / "quality/mutation_trial.py"
+    source.parent.mkdir()
+    source.write_bytes(
+        (Path(__file__).resolve().parents[1] / "quality/mutation_trial.py").read_bytes()
+    )
+    prepare_launcher(tmp_path)
     with pytest.raises(SystemExit) as stopped:
-        runpy.run_path(str(launcher_path(root)), run_name="__main__")
+        runpy.run_path(str(launcher_path(tmp_path)), run_name="__main__")
 
     assert stopped.value.code == status
 
