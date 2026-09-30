@@ -219,6 +219,16 @@ def test_rejects_missing_file_metadata(tmp_path: Path, field: str) -> None:
         verify_duplication_report(value, expected(path))
 
 
+@pytest.mark.parametrize("invalid", [-1, True, 1.5])
+def test_rejects_invalid_file_complexity(tmp_path: Path, invalid: object) -> None:
+    path = tmp_path / "check.py"
+    value = native(path)
+    file, _folder = parts(value)
+    file["complexity"] = invalid
+    with pytest.raises(ValueError, match="nonnegative"):
+        verify_duplication_report(value, expected(path))
+
+
 def test_rejects_later_file_format(tmp_path: Path) -> None:
     path = tmp_path / "check.py"
     value = native(path)
