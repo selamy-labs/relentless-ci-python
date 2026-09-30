@@ -4,8 +4,12 @@ import os
 import shutil
 from pathlib import Path
 
-INPUTS = ("src", "tests", "quality")
+INPUTS = ("src", "tests", "quality", "docs", ".github")
 CONFIGURATION = (
+    ".gitignore",
+    "AGENTS.md",
+    "LICENSE",
+    "README.md",
     "pyproject.toml",
     "cosmic-ray.toml",
     "uv.lock",
