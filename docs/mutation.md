@@ -39,7 +39,7 @@ handling while preserving the exact complete-result check.
 
 Individual trials have a 30-second limit. Initialization and baseline use the
 ordinary 1,800-second command deadline. Full mutation execution has a separate
-9,000-second deadline in `quality/mutation-timeout.json`. These deadlines bound
+12,000-second deadline in `quality/mutation-timeout.json`. These deadlines bound
 execution; reaching one never counts as a killed mutant or a successful gate.
 The separate execution budget accommodates the complete verifier mutation plan.
 The first hosted Linux matrix, on standard four-CPU runners, retained between
@@ -49,10 +49,14 @@ hosted PR matrix, but a renamed private instantiation of the same 2,769-mutant
 plan exceeded 6,000 seconds on Python 3.11, 3.12 and 3.13. With a 9,000-second
 pool, Python 3.11 completed 2,769/2,769 native kills, while the other three
 jobs hit the former 120-minute outer hosted limit before their pools ended.
-The 9,000-second pool and 200-minute hosted job limit leave measured capacity
-for runner variance and report preservation. The 30-second individual trial,
-mutation scope, operators, tests and result-integrity checks remain unchanged;
-timeouts and cancellations still fail.
+The next generated-instance run completed Python 3.11, 3.13 and 3.14 under the
+9,000-second pool, but Python 3.12 reached that deadline with 2,628 of 2,769
+results recorded. The retained 141 missing results fail the complete-session
+gate. The pool now has a 12,000-second limit and the hosted analysis job has a
+240-minute outer limit, leaving room for setup and report preservation on the
+observed slower runner. The 30-second individual trial, mutation scope,
+operators, tests and result-integrity checks remain unchanged; timeouts and
+cancellations still fail.
 
 Run the same full local verifier described in the README. It requires no paid
 service or account credentials for mutation analysis. Hosted matrix enforcement
