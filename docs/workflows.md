@@ -40,10 +40,15 @@ results. Failed, skipped, cancelled or missing results fail its shell check.
 Analysis receipts are retained for seven days even on failure. Daily main runs
 repeat the checks to detect newly disclosed dependency vulnerabilities.
 
-The local native gate has passed on Linux with the pinned tools. Hosted runs,
-the complete runtime/platform matrix, trusted policy-change approval and live
-required-check protections remain pending. Local scanner success does not prove
-that a contributor cannot alter a workflow or forge its status context.
+The published `main` revision has an initial hosted failure in Windows package
+checks. The repair PR has passed its four Windows installed-behavior jobs, while
+its full Linux analysis and exact-main rerun remain pending. The protected branch
+strictly requires the aggregate `Relentless CI gate` from the GitHub Actions App.
+This is interim enforcement: a dedicated trusted-policy check, source-bound
+maintainer rationale, and live bypass probes remain outstanding. The
+`CODEOWNERS` file assigns the whole repository, including `.github`, to two
+administrators. Code-owner review is not enforced until this file is on
+protected `main` and that branch's review setting is enabled and read back.
 
 The offline [runtime-support gate](runtimes.md) also requires both Python
 matrices and package metadata to match a current reviewed upstream snapshot.

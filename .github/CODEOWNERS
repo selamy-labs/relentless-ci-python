@@ -1,0 +1,3 @@
+# The protected branch must require code-owner review for this ownership to gate merges.
+* @pselamy @selamy-infra
+/.github/ @pselamy @selamy-infra
