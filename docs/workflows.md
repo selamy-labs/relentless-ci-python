@@ -41,8 +41,8 @@ Analysis receipts are retained for seven days even on failure. Daily main runs
 repeat the checks to detect newly disclosed dependency vulnerabilities.
 
 The published `main` revision has an initial hosted failure in Windows package
-checks. The repair PR has passed its four Windows installed-behavior jobs, while
-its full Linux analysis and exact-main rerun remain pending. The protected branch
+checks. The repair PR passed all 17 hosted jobs at its earlier head, while the
+capacity-adjusted PR and exact-main rerun remain pending. The protected branch
 strictly requires the aggregate `Relentless CI gate` from the GitHub Actions App.
 This is interim enforcement: a dedicated trusted-policy check, source-bound
 maintainer rationale, and live bypass probes remain outstanding. The
