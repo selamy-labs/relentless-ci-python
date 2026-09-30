@@ -4,6 +4,7 @@ import hashlib
 import importlib
 import json
 import runpy
+from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 import pytest
@@ -54,6 +55,13 @@ def test_local_links_images_fragments_and_duplicate_headings(tmp_path: Path) -> 
         checked_target(tmp_path, tmp_path / "README.md", "", {tmp_path / "README.md"})
         is None
     )
+
+
+def test_document_record_rejects_rebinding() -> None:
+    parsed = document("# Section\n")
+    field = "links"
+    with pytest.raises(FrozenInstanceError):
+        setattr(parsed, field, [])
 
 
 @pytest.mark.parametrize(
