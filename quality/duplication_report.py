@@ -39,7 +39,12 @@ FOLDER_FIELDS = {
 
 def exact_paths(actual: list[str], expected: set[str]) -> None:
     """Neither omissions nor duplicate names can hide behind set comparison."""
-    if len(actual) > len(set(actual)) or set(actual) != expected:
+    seen: set[str] = set()
+    for name in actual:
+        if name in seen:
+            raise ValueError("duplication source or folder inventory is incomplete")
+        seen.add(name)
+    if seen != expected:
         raise ValueError("duplication source or folder inventory is incomplete")
 
 
