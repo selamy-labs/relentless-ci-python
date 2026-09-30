@@ -74,8 +74,12 @@ def test_launch_copies_inputs_and_binds_own_environment(
         [str(target / "src"), str(target)]
     )
     assert environment(target, inherited)["PYTHONDONTWRITEBYTECODE"] == "1"
-    assert environment(target, inherited)["PYTEST_DEBUG_TEMPROOT"] == str(target)
-    assert environment(tmp_path, inherited)["PYTEST_DEBUG_TEMPROOT"] == str(tmp_path)
+    assert environment(target, inherited)["PYTEST_DEBUG_TEMPROOT"] == str(
+        target / ".quality-results"
+    )
+    assert environment(tmp_path, inherited)["PYTEST_DEBUG_TEMPROOT"] == str(
+        tmp_path / ".quality-results"
+    )
 
 
 @pytest.mark.parametrize(

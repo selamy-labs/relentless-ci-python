@@ -82,7 +82,7 @@ def test_mutates_an_isolated_copy_with_fresh_baseline(
         assert timeout == (7 if arguments[1] == "exec" else 5)
         assert env["PYTHONPATH"] == os.pathsep.join([str(target / "src"), str(target)])
         assert env["PYTHONDONTWRITEBYTECODE"] == "1"
-        assert env["PYTEST_DEBUG_TEMPROOT"] == str(target)
+        assert env["PYTEST_DEBUG_TEMPROOT"] == str(target / ".quality-results")
         assert mutation.snapshot(target) == mutation.snapshot(tmp_path)
         assert not (target / "src" / "__pycache__").exists()
         received.append(arguments)

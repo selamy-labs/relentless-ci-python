@@ -48,5 +48,5 @@ def environment(root: Path, inherited: dict[str, str]) -> dict[str, str]:
     result = inherited.copy()
     result["PYTHONPATH"] = os.pathsep.join([str(root / "src"), str(root)])
     result["PYTHONDONTWRITEBYTECODE"] = "1"
-    result["PYTEST_DEBUG_TEMPROOT"] = str(root)
+    result["PYTEST_DEBUG_TEMPROOT"] = str(root / ".quality-results")
     return result
