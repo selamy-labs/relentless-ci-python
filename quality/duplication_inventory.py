@@ -72,7 +72,7 @@ def inventory_files(value: object) -> list[object]:
     files = array(summary["files"])
     count = len(files)
     reported = nonnegative(summary["totalFiles"])
-    if count > 1 or reported < count or reported > count:
+    if (count, reported) not in ((0, 0), (1, 1)):
         raise ValueError("duplication inventory totals disagree")
     return files
 
