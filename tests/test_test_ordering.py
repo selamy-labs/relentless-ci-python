@@ -63,7 +63,10 @@ def test_constructed_cleanup_identity_has_value_equality() -> None:
 def test_collection_rejects_broken_native_receipt_priority(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(conftest, "priority", lambda node: (False, node))
+    def broken_priority(node: str) -> tuple[bool, str]:
+        return False, node
+
+    monkeypatch.setattr(conftest, "priority", broken_priority)
 
     with pytest.raises(RuntimeError, match="native receipt ordering contract failed"):
         pytest_collection_modifyitems([])
