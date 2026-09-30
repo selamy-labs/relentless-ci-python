@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from quality.duplication_inventory import Eligible
-from quality.duplication_report import verify_duplication_report
+from quality.duplication_report import verify_duplication_report, verify_summary_totals
 from quality.report_data import array, record
 
 
@@ -78,6 +78,20 @@ def expected(path: Path) -> dict[str, Eligible]:
 def test_accepts_complete_clean_report(tmp_path: Path) -> None:
     path = tmp_path / "check.py"
     verify_duplication_report(native(path), expected(path))
+
+
+def test_accepts_equal_large_summary_counts() -> None:
+    reported_files = int("257")
+    reported_folders = int("259")
+    expected_files = int("257")
+    expected_folders = int("259")
+    assert reported_files is not expected_files
+    assert reported_folders is not expected_folders
+    verify_summary_totals(
+        {"totalFiles": reported_files, "totalFolders": reported_folders},
+        expected_files,
+        expected_folders,
+    )
 
 
 def test_accepts_no_threshold_eligible_files(tmp_path: Path) -> None:
