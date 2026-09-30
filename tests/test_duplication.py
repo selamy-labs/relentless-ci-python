@@ -113,7 +113,7 @@ def test_positive_fractional_scan_budget_still_launches(
     assert observed == [0.5]
 
 
-@pytest.mark.parametrize("status", [0, 3])
+@pytest.mark.parametrize("status", [0, 3, -9])
 def test_native_exit_status_is_authoritative(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, status: int
 ) -> None:
