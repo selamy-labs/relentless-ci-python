@@ -70,7 +70,7 @@ def inventory_files(value: object) -> list[object]:
     if summary["by"] not in ("tokens",):
         raise ValueError("duplication inventory summary measure changed")
     files = array(summary["files"])
-    if nonnegative(summary["totalFiles"]) - len(files) or len(files) > 1:
+    if nonnegative(summary["totalFiles"]) != len(files) or len(files) > 1:
         raise ValueError("duplication inventory totals disagree")
     return files
 
