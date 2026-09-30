@@ -33,7 +33,7 @@ def example_section(text: str) -> str:
     heading = "## Example behavior\n"
     if text.count(heading) != 1:
         raise ValueError("README example heading is missing or duplicated")
-    return text.split(heading, 1)[1].partition("\n## ")[0]
+    return text.partition(heading)[2].partition("\n## ")[0]
 
 
 def expected_example(text: str) -> str:
