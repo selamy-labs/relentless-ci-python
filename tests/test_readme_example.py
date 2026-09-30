@@ -104,6 +104,8 @@ def test_renamed_script_uses_reviewed_package_policy(
             "renamed_example",
         ),
         (b"[console_scripts]\nrenamed-example = renamed_example.cli:main\n", "other"),
+        (b"[console_scripts]\nrenamed-example = renamed_example.cli:main\n", "aaa_other"),
+        (b"[console_scripts]\nrenamed-example = renamed_example.cli:main\n", "zzz_other"),
     ],
 )
 def test_malformed_reviewed_entrypoint_fails(
