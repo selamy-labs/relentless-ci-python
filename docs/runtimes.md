@@ -63,3 +63,7 @@ patch releases and run the complete replacement matrix. This branch-support
 gate does not establish that an installed patch has no known vulnerabilities.
 Dependency scans and the [security policy](security.md) remain independently
 required. Do not silently omit a failing runtime or operating system.
+
+The checked-in Dependabot schedule proposes weekly `uv` and GitHub Actions
+updates. A proposal still needs review and the full verifier; it does not
+change the approved Python branches or renew the dated upstream review.
