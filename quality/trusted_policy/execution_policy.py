@@ -37,7 +37,8 @@ def associated_pull(value: object, number: int, head: str, base: str) -> bool:
     pulls = sequence(record(value)["pull_requests"])
     if len(pulls) != 1:
         return False
-    pull = record(pulls[0])
+    (only_pull,) = pulls
+    pull = record(only_pull)
     return (
         identifier(pull["number"]) == identifier(number)
         and digest(record(pull["head"])["sha"]) == digest(head)

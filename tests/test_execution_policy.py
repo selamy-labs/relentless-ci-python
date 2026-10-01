@@ -224,3 +224,64 @@ def test_unassociated_fork_run_rejects_both_identity_directions() -> None:
             HEAD,
             BASE,
         )
+
+
+def fresh(value: str) -> str:
+    return "".join((value[: len(value) // 2], value[len(value) // 2 :]))
+
+
+def test_equal_native_values_do_not_need_shared_python_objects() -> None:
+    run = {**workflow(), "id": int("300"), "workflow_id": int("300")}
+    run["run_attempt"] = int("300")
+    run["head_sha"] = fresh(HEAD)
+    assert verify_run(run, int("300"), fresh(HEAD)) == run
+    job = {
+        **mapping(jobs()[0]),
+        "run_id": int("300"),
+        "run_attempt": int("300"),
+        "head_sha": fresh(HEAD),
+    }
+    assert job_identity(job, run)[0] == 1
+    pull = {
+        "number": int("300"),
+        "head": {"sha": fresh(HEAD)},
+        "base": {"sha": fresh(BASE)},
+    }
+    assert associated_pull({"pull_requests": [pull]}, int("300"), HEAD, BASE)
+    fork_run: dict[str, object] = {"pull_requests": [], "head_branch": fresh("feature")}
+    fork_run["head_repository"] = {"id": int("300"), "full_name": fresh("owner/repo")}
+    candidate = {
+        "number": int("300"),
+        "base": {"sha": fresh(BASE)},
+        "head": {
+            "sha": fresh(HEAD),
+            "ref": fresh("feature"),
+            "repo": {"id": int("300"), "full_name": fresh("owner/repo")},
+        },
+    }
+    assert associated_run(fork_run, candidate, int("300"), HEAD, BASE)
+
+
+def test_native_job_count_must_equal_the_declared_matrix() -> None:
+    expected = {"first", "second"}
+    items = [
+        {
+            "id": index,
+            "run_id": 1,
+            "run_attempt": 3,
+            "head_sha": HEAD,
+            "name": name,
+            "status": "completed",
+            "conclusion": "success",
+        }
+        for index, name in enumerate(sorted(expected), 1)
+    ]
+    require_matrix(workflow(), items, 2, HEAD, expected, 2, True)
+    for native_count in (1, 3):
+        with pytest.raises(PolicyFailure, match="incomplete"):
+            require_matrix(workflow(), items, 2, HEAD, expected, native_count, True)
+
+
+def test_complete_flag_requires_literal_boolean_true() -> None:
+    with pytest.raises(PolicyFailure, match="complete"):
+        require_matrix(workflow(), jobs(), 2, HEAD, NAMES, 3, cast(bool, 1))
