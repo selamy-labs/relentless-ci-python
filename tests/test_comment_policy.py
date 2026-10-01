@@ -60,9 +60,24 @@ def test_duplicate_comment_identity_fails_even_when_valid() -> None:
 
 
 def test_foreign_issue_comment_fails_inventory() -> None:
-    foreign = {**comment(), "issue_url": ISSUE + "8"}
-    with pytest.raises(PolicyFailure, match="another issue"):
-        require_comment([foreign], 2, HEAD, ISSUE, True)
+    for url in (ISSUE + "8", ISSUE[:-1]):
+        foreign = {**comment(), "issue_url": url}
+        with pytest.raises(PolicyFailure, match="another issue"):
+            require_comment([foreign], 2, HEAD, ISSUE, True)
+
+
+def test_reason_length_boundary_is_exact() -> None:
+    prefix = f"Policy rationale for {HEAD}: "
+    with pytest.raises(PolicyFailure, match="substantive"):
+        comment_reason(prefix + "x" * 29, HEAD)
+    assert comment_reason(prefix + "x" * 30, HEAD) == "x" * 30
+
+
+def test_equal_reviewer_identifiers_do_not_require_object_identity() -> None:
+    author = int("1001")
+    reviewer = int("1001")
+    assert author == reviewer and author is not reviewer
+    assert require_comment([comment(author=author)], reviewer, HEAD, ISSUE, True) == 1
 
 
 @pytest.mark.parametrize("complete", [False, None, 1])
