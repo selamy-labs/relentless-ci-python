@@ -83,6 +83,15 @@ def test_complete_inventory_binds_each_component_and_project(tmp_path: Path) -> 
     )
 
 
+def test_single_character_sdist_license_file_path_is_valid(tmp_path: Path) -> None:
+    policy, _ = fixture(tmp_path)
+    record(record(policy["packages"])["beta==2.0.0"])["evidenceUrl"] = (
+        SOURCE + "beta-2.0.0.tar.gz#L"
+    )
+    save(tmp_path, policy)
+    assert inventory(tmp_path)["componentCount"] == 2
+
+
 @pytest.mark.parametrize(
     ("field", "value", "message"),
     [

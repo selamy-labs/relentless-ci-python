@@ -59,10 +59,11 @@ def evidence(entry: dict[str, object], item: dict[str, object]) -> None:
     if kind == "pypi-release-metadata" and url == expected:
         return
     source = text(record(item["sdist"])["url"])
+    prefix = source + "#"
     if (
         kind == "locked-sdist-license-file"
-        and url.startswith(source + "#")
-        and len(url) > len(source) + 1
+        and url.startswith(prefix)
+        and url.removeprefix(prefix)
     ):
         return
     raise ValueError("license provenance must bind to the locked release")
@@ -104,7 +105,7 @@ def reviewed_components(
         component(key, packages[key], approved, record(reviewed[key]))
         for key in sorted(packages)
     ]
-    if approved - {text(row["spdx"]) for row in rows}:
+    if not approved.issubset({text(row["spdx"]) for row in rows}):
         raise ValueError("approved SPDX expressions differ from locked inventory")
     return rows
 
