@@ -31,6 +31,38 @@ def run() -> dict[str, object]:
     }
 
 
+def dispatch() -> dict[str, object]:
+    return {
+        "repository": {"full_name": NAME, "id": IDENTITY},
+        "action": "relentless-policy-reevaluate",
+        "client_payload": {"pull_number": 2},
+    }
+
+
+def test_dispatch_supplies_only_pr_lookup_number() -> None:
+    assert parse_event("repository_dispatch", dispatch(), NAME, IDENTITY) == Trigger(
+        "dispatch", NAME, IDENTITY, 2, None
+    )
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"action": "other"},
+        {"client_payload": {}},
+        {"client_payload": {"pull_number": 0}},
+        {"client_payload": {"pull_number": "2"}},
+        {"client_payload": {"pull_number": 2, "verdict": "pass"}},
+        {"client_payload": {"pull_number": 2, "head": "a" * 40}},
+    ],
+)
+def test_dispatch_rejects_extra_verdict_and_invalid_lookup(
+    change: dict[str, object],
+) -> None:
+    with pytest.raises(PolicyFailure):
+        parse_event("repository_dispatch", {**dispatch(), **change}, NAME, IDENTITY)
+
+
 @pytest.mark.parametrize("action", ["created", "edited", "deleted"])
 def test_comment_actions_recheck_current_native_state(action: str) -> None:
     event = comment()

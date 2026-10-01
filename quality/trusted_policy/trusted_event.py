@@ -15,7 +15,7 @@ from quality.trusted_policy.review_policy import (
 
 @dataclass(frozen=True)
 class Trigger:
-    kind: Literal["rationale", "completed_run"]
+    kind: Literal["rationale", "completed_run", "dispatch"]
     repository: str
     repository_id: int
     pull_number: int | None
@@ -59,12 +59,23 @@ def completed_run_event(event: dict[str, object], name: str, identity: int) -> T
     )
 
 
+def dispatch_event(event: dict[str, object], name: str, identity: int) -> Trigger:
+    if not same_text(event.get("action"), "relentless-policy-reevaluate"):
+        raise PolicyFailure("unsupported policy dispatch action")
+    payload = record(event.get("client_payload"))
+    if set(payload) != {"pull_number"}:
+        raise PolicyFailure("policy dispatch must contain only a PR lookup number")
+    return Trigger("dispatch", name, identity, identifier(payload["pull_number"]), None)
+
+
 def parse_event(
     event_name: str, value: object, expected_name: str, expected_id: int
 ) -> Trigger:
     """Event supplies identifiers only; the collector must reread native state."""
     event = record(value)
     repository(event["repository"], expected_name, expected_id)
+    if same_text(event_name, "repository_dispatch"):
+        return dispatch_event(event, expected_name, expected_id)
     if same_text(event_name, "issue_comment"):
         return rationale_event(event, expected_name, expected_id)
     if same_text(event_name, "workflow_run"):
