@@ -7,12 +7,15 @@ import pytest
 
 from quality.trusted_policy.review_policy import (
     PolicyFailure,
+    contributor_ids,
     digest,
     identifier,
     latest_reviews,
+    matching_role,
     rationale,
     record,
     require_approval,
+    retain_review,
     same_text,
     timestamp,
 )
@@ -101,6 +104,7 @@ def test_author_cannot_approve_own_change_even_as_admin() -> None:
     [
         ("state", "closed"),
         ("draft", True),
+        ("draft", 0),
         ("head", {"sha": "c" * 40}),
         ("base", {"sha": "d" * 40}),
     ],
@@ -132,6 +136,38 @@ def test_review_on_previous_head_is_stale() -> None:
         decide(pull_request(), [{**review(), "commit_id": "c" * 40}], {2: role()})
 
 
+def test_lexically_earlier_review_head_is_stale() -> None:
+    with pytest.raises(PolicyFailure, match="missing"):
+        decide(pull_request(), [{**review(), "commit_id": "0" * 40}], {2: role()})
+
+
+def test_equal_commit_values_with_distinct_objects_qualify() -> None:
+    native_head = HEAD.encode().decode()
+    assert native_head is not HEAD
+    assert (
+        decide(pull_request(), [{**review(), "commit_id": native_head}], {2: role()})
+        == 2
+    )
+
+
+def test_equal_candidate_digests_with_distinct_objects_qualify() -> None:
+    native_head = HEAD.encode().decode()
+    native_base = BASE.encode().decode()
+    assert native_head is not HEAD and native_base is not BASE
+    candidate = {
+        **pull_request(),
+        "head": {"sha": native_head},
+        "base": {"sha": native_base},
+    }
+    assert decide(candidate, [review()], {2: role()}) == 2
+
+
+@pytest.mark.parametrize("field", ["head", "base"])
+def test_lexically_earlier_candidate_digest_is_rejected(field: str) -> None:
+    with pytest.raises(PolicyFailure):
+        decide({**pull_request(), field: {"sha": "0" * 40}}, [review()], {2: role()})
+
+
 def test_latest_decision_wins_independent_of_api_order() -> None:
     original = review()
     revoked = {
@@ -153,6 +189,13 @@ def test_newer_approval_replaces_revocation_and_comments_preserve_decision() -> 
 def test_equal_timestamp_platform_identity_orders_reviews() -> None:
     with pytest.raises(PolicyFailure, match="missing"):
         decide(pull_request(), [review(), review(11, state="DISMISSED")], {2: role()})
+
+
+def test_retain_review_does_not_replace_equal_native_order_key() -> None:
+    latest: dict[int, tuple[tuple[datetime, int], dict[str, object]]] = {}
+    retain_review(latest, 2, 10, review())
+    retain_review(latest, 2, 10, review(state="DISMISSED"))
+    assert latest[2][1]["state"] == "APPROVED"
 
 
 def test_unqualified_review_does_not_hide_a_separate_valid_maintainer() -> None:
@@ -182,9 +225,27 @@ def test_role_response_must_identify_exact_reviewer(user: dict[str, object]) -> 
         decide(pull_request(), [review()], {2: {**role(), "user": user}})
 
 
+def test_role_identity_checks_both_lexical_directions() -> None:
+    reviewer = {"id": 2, "login": "user-2"}
+    for user in ({"id": 1, "login": "user-2"}, {"id": 2, "login": "z-user"}):
+        with pytest.raises(PolicyFailure, match="identity"):
+            matching_role({"user": user, "role_name": "maintain"}, reviewer)
+
+
+def test_role_identity_compares_large_values_instead_of_objects() -> None:
+    reviewer = {"id": int("1000"), "login": "user-1000"}
+    response = {
+        "user": {"id": int("1000"), "login": "user-1000"},
+        "role_name": "maintain",
+    }
+    assert matching_role(response, reviewer)
+
+
 def test_partial_or_absent_metadata_never_passes() -> None:
     with pytest.raises(PolicyFailure, match="complete"):
         decide(pull_request(), [review()], {2: role()}, False)
+    with pytest.raises(PolicyFailure, match="complete"):
+        decide(pull_request(), [review()], {2: role()}, 1)  # type: ignore[arg-type]
     with pytest.raises(PolicyFailure, match="missing"):
         decide(pull_request(), [], {})
     with pytest.raises(KeyError):
@@ -202,6 +263,22 @@ def test_duplicate_or_unknown_review_inventory_fails() -> None:
 def test_platform_identities_are_positive_integers(value: object) -> None:
     with pytest.raises(PolicyFailure):
         identifier(value)
+
+
+def test_platform_identity_rejects_classes_that_compare_equal_to_int() -> None:
+    class EqualInt(type):
+        def __eq__(cls, other: object) -> bool:
+            return other is int
+
+        def __ne__(cls, other: object) -> bool:
+            return other is not int
+
+    class FakeInteger(metaclass=EqualInt):
+        def __le__(self, other: object) -> bool:
+            return False
+
+    with pytest.raises(PolicyFailure):
+        identifier(FakeInteger())
 
 
 @pytest.mark.parametrize("value", [[], 1, None, "object"])
@@ -233,6 +310,18 @@ def test_positive_rationale_and_timestamp_boundaries() -> None:
     assert timestamp("2024-02-29T00:00:00Z") == datetime.fromisoformat(
         "2024-02-29T00:00:00+00:00"
     )
+    with pytest.raises(PolicyFailure, match="rationale"):
+        rationale("Policy rationale: " + "x" * 29)
+
+
+def test_complete_commit_inventory_compares_values_not_integer_objects() -> None:
+    commits = [
+        {"sha": f"{number:040x}", "author": {"id": 1}, "committer": {"id": 4}}
+        for number in range(1, 258)
+    ]
+    assert contributor_ids({"commits": int("257")}, commits, 1) == {1, 4}
+    with pytest.raises(PolicyFailure, match="complete"):
+        contributor_ids({"commits": 1}, commits, 1)
 
 
 @pytest.mark.parametrize("field", ["author", "committer"])
