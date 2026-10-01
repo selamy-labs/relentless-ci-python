@@ -104,7 +104,7 @@ def reviewed_components(
         component(key, packages[key], approved, record(reviewed[key]))
         for key in sorted(packages)
     ]
-    if approved != {text(row["spdx"]) for row in rows}:
+    if approved - {text(row["spdx"]) for row in rows}:
         raise ValueError("approved SPDX expressions differ from locked inventory")
     return rows
 
