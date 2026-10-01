@@ -49,7 +49,7 @@ def walk_entry(root: Path, path: Path) -> list[str]:
     if path.is_dir():
         return (
             []
-            if path.name == "__pycache__"
+            if path.name in {"__pycache__"}
             else disk_files(root, path, top_level=False)
         )
     if path.is_file():
