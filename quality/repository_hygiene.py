@@ -20,7 +20,7 @@ TEXT_SUFFIXES = {
     ".yml",
 }
 TEXT_NAMES = {".gitignore", ".github/CODEOWNERS", "LICENSE"}
-GENERATED_ENTRIES = GENERATED_ROOTS | {".coverage"}
+GENERATED_ENTRIES = {".coverage", *GENERATED_ROOTS}
 CONFLICT = re.compile(r"^(?:<{7,}|={7,}|>{7,}|\|{7,})(?:[ \t\r]|$)", re.MULTILINE)
 
 
