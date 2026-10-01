@@ -285,3 +285,20 @@ def test_native_job_count_must_equal_the_declared_matrix() -> None:
 def test_complete_flag_requires_literal_boolean_true() -> None:
     with pytest.raises(PolicyFailure, match="complete"):
         require_matrix(workflow(), jobs(), 2, HEAD, NAMES, 3, cast(bool, 1))
+
+
+def test_large_paginated_job_inventory_uses_numeric_value_equality() -> None:
+    expected = {f"Required job {index}" for index in range(300)}
+    items = [
+        {
+            "id": index + 1,
+            "run_id": 1,
+            "run_attempt": 3,
+            "head_sha": HEAD,
+            "name": f"Required job {index}",
+            "status": "completed",
+            "conclusion": "success",
+        }
+        for index in range(300)
+    ]
+    require_matrix(workflow(), items, 2, HEAD, expected, int("300"), True)
