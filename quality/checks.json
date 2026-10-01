@@ -141,6 +141,11 @@
   [
     "python",
     "-m",
+    "quality.stability"
+  ],
+  [
+    "python",
+    "-m",
     "pytest",
     "--cov",
     "--cov-report=term-missing",
