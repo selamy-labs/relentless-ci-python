@@ -109,6 +109,12 @@ def test_unreviewed_top_level_policy_fails(
         ("alpha==1.0.0", "spdx", "UNKNOWN", "SPDX expression requires review"),
         ("alpha==1.0.0", "evidenceSha256", "bad", "canonical SHA-256"),
         ("alpha==1.0.0", "evidenceUrl", "https://unapproved.example/a", "provenance"),
+        (
+            "alpha==1.0.0",
+            "evidenceUrl",
+            "https://pypi.org/pypi/alpha/1.0.0/jso",
+            "provenance",
+        ),
         ("beta==2.0.0", "evidenceUrl", SOURCE + "beta-2.0.0.tar.gz#", "provenance"),
     ],
 )
