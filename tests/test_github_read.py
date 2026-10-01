@@ -51,12 +51,13 @@ def test_failed_native_request_never_credits_valid_output(tmp_path: Path) -> Non
 def test_negative_native_exit_is_failure(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    def interrupted(
-        *args: object, **kwargs: object
+    def terminated(
+        command: object, **kwargs: object
     ) -> subprocess.CompletedProcess[bytes]:
-        return subprocess.CompletedProcess(["gh"], -1, b"{}")
+        assert kwargs["timeout"] == 30
+        return subprocess.CompletedProcess(["gh"], -9, b"{}")
 
-    monkeypatch.setattr(subprocess, "run", interrupted)
+    monkeypatch.setattr(subprocess, "run", terminated)
     with pytest.raises(PolicyFailure, match="request failed"):
         GithubAPI(tool(tmp_path, "print('{}')"), REPO)(ENDPOINT)
 
