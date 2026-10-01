@@ -68,18 +68,19 @@ def test_zero_native_jobs_returns_complete_empty_inventory() -> None:
     assert object_inventory(api, "endpoint", "jobs") == (0, [])
 
 
-@pytest.mark.parametrize("object_shape", [False, True])
-def test_terminal_empty_page_at_exact_collection_budget(object_shape: bool) -> None:
-    if object_shape:
-        pages: list[object] = [{"total_count": 999, "jobs": [1]} for _ in range(999)]
-        pages.append({"total_count": 999, "jobs": []})
-        api = Pages(pages)
-        assert object_inventory(api, "endpoint", "jobs") == (999, [1] * 999)
-    else:
-        array_pages: list[object] = [[1] for _ in range(999)]
-        array_pages.append([])
-        api = Pages(array_pages)
-        assert array_inventory(api, "endpoint") == [1] * 999
+def test_object_terminal_empty_page_at_exact_collection_budget() -> None:
+    pages: list[object] = [{"total_count": 999, "jobs": [1]} for _ in range(999)]
+    pages.append({"total_count": 999, "jobs": []})
+    api = Pages(pages)
+    assert object_inventory(api, "endpoint", "jobs") == (999, [1] * 999)
+    assert api.routes[-1].endswith("&page=1000")
+
+
+def test_array_terminal_empty_page_at_exact_collection_budget() -> None:
+    pages: list[object] = [[1] for _ in range(999)]
+    pages.append([])
+    api = Pages(pages)
+    assert array_inventory(api, "endpoint") == [1] * 999
     assert api.routes[-1].endswith("&page=1000")
 
 
