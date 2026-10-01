@@ -163,7 +163,9 @@ def test_entrypoint_replaces_stale_receipt_only_after_success(
     report.parent.mkdir()
     report.write_text("stale")
     runpy.run_module("quality.component_inventory_main", run_name="__main__")
-    assert json.loads(report.read_text())["componentCount"] == 2
+    actual = report.read_text()
+    assert actual == json.dumps(inventory(tmp_path), indent=2) + "\n"
+    assert json.loads(actual)["componentCount"] == 2
     policy["approvedExpressions"] = ["UNKNOWN"]
     save(tmp_path, policy)
     with pytest.raises(ValueError):
