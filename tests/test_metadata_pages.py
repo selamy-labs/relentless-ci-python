@@ -97,13 +97,14 @@ def test_stable_count_compares_values_in_both_directions() -> None:
 
 def test_zero_count_rejects_object_with_deceptive_equality() -> None:
     class EqualInt(type):
-        def __eq__(cls, other: object) -> bool:
+        def __eq__(_cls, other: object) -> bool:
             return other is int
 
     class FakeZero(metaclass=EqualInt):
         def __eq__(self, other: object) -> bool:
             return other == 0
 
+    assert EqualInt.__eq__(FakeZero, int)
     with pytest.raises(PolicyFailure):
         count(FakeZero())
 

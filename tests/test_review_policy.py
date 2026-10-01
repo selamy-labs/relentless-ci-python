@@ -268,16 +268,18 @@ def test_platform_identities_are_positive_integers(value: object) -> None:
 
 def test_platform_identity_rejects_classes_that_compare_equal_to_int() -> None:
     class EqualInt(type):
-        def __eq__(cls, other: object) -> bool:
+        def __eq__(_cls, other: object) -> bool:
             return other is int
 
-        def __ne__(cls, other: object) -> bool:
+        def __ne__(_cls, other: object) -> bool:
             return other is not int
 
     class FakeInteger(metaclass=EqualInt):
         def __le__(self, other: object) -> bool:
             return False
 
+    assert EqualInt.__eq__(FakeInteger, int)
+    assert not EqualInt.__ne__(FakeInteger, int)
     with pytest.raises(PolicyFailure):
         identifier(FakeInteger())
 

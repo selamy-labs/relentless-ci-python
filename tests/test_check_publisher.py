@@ -178,16 +178,18 @@ def test_uncompiled_head_or_decision_is_rejected(head: str, passed: object) -> N
 
 def test_compiled_decision_rejects_class_that_compares_equal_to_bool() -> None:
     class EqualBool(type):
-        def __eq__(cls, other: object) -> bool:
+        def __eq__(_cls, other: object) -> bool:
             return other is bool
 
-        def __ne__(cls, other: object) -> bool:
+        def __ne__(_cls, other: object) -> bool:
             return other is not bool
 
     class FakeBool(metaclass=EqualBool):
         def __bool__(self) -> bool:
             return True
 
+    assert EqualBool.__eq__(FakeBool, bool)
+    assert not EqualBool.__ne__(FakeBool, bool)
     with pytest.raises(PolicyFailure):
         payload(target(), HEAD, FakeBool())
 
