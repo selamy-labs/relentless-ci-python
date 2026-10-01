@@ -52,18 +52,21 @@ def run(identity: int, head: str = HEAD) -> dict[str, object]:
 def source() -> dict[str, object]:
     return {
         ROOT: {"id": 17, "full_name": "owner/repo"},
-        ROOT + "/branches/main": {
+        ROOT
+        + "/branches/main": {
             "name": "main",
             "protected": True,
             "commit": {"sha": BASE},
         },
-        ROOT + "/pulls/2": {
+        ROOT
+        + "/pulls/2": {
             "head": {"sha": HEAD},
             "base": {"sha": BASE},
             "merge_commit_sha": "c" * 40,
         },
         RUNS: {"total_count": 2, "workflow_runs": [run(90), run(91)]},
-        ROOT + "/actions/workflows/23/runs?per_page=100&page=2": {
+        ROOT
+        + "/actions/workflows/23/runs?per_page=100&page=2": {
             "total_count": 2,
             "workflow_runs": [],
         },

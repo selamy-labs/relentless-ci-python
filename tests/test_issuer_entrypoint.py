@@ -29,12 +29,14 @@ from tests.test_trusted_issuer import native_source as approved_source
 def native_source() -> dict[str, object]:
     return {
         ROOT: {"id": 17, "full_name": "owner/repo", "default_branch": "main"},
-        ROOT + "/branches/main": {
+        ROOT
+        + "/branches/main": {
             "name": "main",
             "protected": True,
             "commit": {"sha": BASE},
         },
-        ROOT + "/actions/workflows/ci.yml": {
+        ROOT
+        + "/actions/workflows/ci.yml": {
             "id": 23,
             "name": "Relentless CI",
             "path": ".github/workflows/ci.yml",

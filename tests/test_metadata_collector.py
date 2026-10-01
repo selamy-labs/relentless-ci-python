@@ -47,9 +47,8 @@ def source() -> dict[str, list[object]]:
         PR + "/reviews?per_page=100&page=2": [[]],
         REPOSITORY + "/collaborators/user-2/permission": [role()],
         RUN: [workflow()],
-        RUN + "/attempts/3/jobs?per_page=100&page=1": [
-            {"total_count": 3, "jobs": jobs()}
-        ],
+        RUN
+        + "/attempts/3/jobs?per_page=100&page=1": [{"total_count": 3, "jobs": jobs()}],
         RUN + "/attempts/3/jobs?per_page=100&page=2": [{"total_count": 3, "jobs": []}],
     }
 
