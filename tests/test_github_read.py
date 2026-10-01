@@ -1,7 +1,9 @@
 """Native child process probes for the narrowly bound read-only metadata adapter."""
 
 import json
+import subprocess
 import sys
+from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 import pytest
@@ -46,6 +48,25 @@ def test_failed_native_request_never_credits_valid_output(tmp_path: Path) -> Non
         GithubAPI(executable, REPO)(ENDPOINT)
 
 
+def test_negative_native_exit_is_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def interrupted(
+        *args: object, **kwargs: object
+    ) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.CompletedProcess(["gh"], -1, b"{}")
+
+    monkeypatch.setattr(subprocess, "run", interrupted)
+    with pytest.raises(PolicyFailure, match="request failed"):
+        GithubAPI(tool(tmp_path, "print('{}')"), REPO)(ENDPOINT)
+
+
+def test_native_api_binding_is_immutable() -> None:
+    reader = GithubAPI(Path("/bin/true"), REPO)
+    with pytest.raises(FrozenInstanceError):
+        reader.repository = "attacker/repo"  # type: ignore[misc]
+
+
 def test_missing_native_cli_fails(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError):
         GithubAPI(tmp_path / "missing-gh", REPO)(ENDPOINT)
@@ -64,6 +85,7 @@ def test_relative_cli_path_is_not_resolved_from_candidate_path() -> None:
         "repos/owner/repo-two/pulls/1",
         "repos/owner/repo/pulls/%2e%2e/secrets",
         "repos/owner/repo/pulls/../secrets",
+        "repos/owner/repo/pulls/../secrets?per_page=100&page=1",
         "repos/owner/repo/pulls/./1",
         "repos/owner/repo/pulls//1",
         "repos/owner/repo/pulls/1#fragment",
