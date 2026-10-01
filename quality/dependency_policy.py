@@ -40,7 +40,7 @@ def artifact(value: object) -> None:
     item = record(value)
     url = urlsplit(text(item.get("url")))
     if (
-        url.scheme != "https"
+        url.scheme not in {"https"}
         or url.netloc != ARTIFACT_HOST
         or not url.path.startswith("/packages/")
         or not url.path.endswith((".whl", ".tar.gz"))
