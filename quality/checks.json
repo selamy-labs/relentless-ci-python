@@ -12,6 +12,11 @@
   [
     "python",
     "-m",
+    "quality.component_inventory_main"
+  ],
+  [
+    "python",
+    "-m",
     "quality.runtime_support_main"
   ],
   [

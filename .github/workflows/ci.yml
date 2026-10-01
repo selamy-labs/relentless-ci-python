@@ -56,6 +56,7 @@ jobs:
           name: analysis-python-${{ matrix.python }}
           path: |
             .quality-results/tests.json
+            .quality-results/component-inventory.json
             .quality-results/*secrets.json
             .quality-results/dependencies.json
             .quality-results/static-security.json
