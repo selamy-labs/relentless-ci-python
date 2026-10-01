@@ -49,7 +49,8 @@ def completed_run_event(event: dict[str, object], name: str, identity: int) -> T
         raise PolicyFailure("run must not identify multiple pull requests")
     if not pulls:
         return Trigger("completed_run", name, identity, None, identifier(run["id"]))
-    pull = record(pulls[0])
+    (only_pull,) = pulls
+    pull = record(only_pull)
     return Trigger(
         "completed_run",
         name,

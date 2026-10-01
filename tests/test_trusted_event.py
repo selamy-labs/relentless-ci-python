@@ -1,6 +1,7 @@
 """Fail-closed issuer event parsing before authenticated metadata reads."""
 
 import copy
+from dataclasses import FrozenInstanceError
 
 import pytest
 
@@ -150,3 +151,35 @@ def test_repository_must_match_both_native_id_and_name(
 def test_unknown_event_is_rejected() -> None:
     with pytest.raises(PolicyFailure, match="unsupported trusted issuer event"):
         parse_event("pull_request_review", comment(), NAME, IDENTITY)
+
+
+def test_native_repository_matches_equal_values_without_shared_objects() -> None:
+    event = dispatch()
+    repository = {"full_name": "".join((NAME[:12], NAME[12:])), "id": int("1234")}
+    event["repository"] = repository
+    assert parse_event("repository_dispatch", event, NAME, int("1234")) == Trigger(
+        "dispatch", NAME, IDENTITY, 2, None
+    )
+
+
+@pytest.mark.parametrize("alternate", ["alpha/repo", "zulu/repo"])
+def test_repository_name_rejects_both_ordered_mismatches(alternate: str) -> None:
+    event = dispatch()
+    event["repository"] = {"full_name": alternate, "id": IDENTITY}
+    with pytest.raises(PolicyFailure):
+        parse_event("repository_dispatch", event, NAME, IDENTITY)
+
+
+@pytest.mark.parametrize("alternate", [IDENTITY - 1, IDENTITY + 1])
+def test_repository_id_rejects_both_ordered_mismatches(alternate: int) -> None:
+    event = dispatch()
+    event["repository"] = {"full_name": NAME, "id": alternate}
+    with pytest.raises(PolicyFailure):
+        parse_event("repository_dispatch", event, NAME, IDENTITY)
+
+
+def test_parsed_trigger_cannot_be_mutated_after_validation() -> None:
+    trigger = parse_event("repository_dispatch", dispatch(), NAME, IDENTITY)
+    field = "pull_number"
+    with pytest.raises(FrozenInstanceError):
+        setattr(trigger, field, 3)
