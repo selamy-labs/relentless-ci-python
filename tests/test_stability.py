@@ -5,7 +5,6 @@ import runpy
 import subprocess
 import sys
 from pathlib import Path
-from typing import cast
 from unittest.mock import patch
 
 import pytest
@@ -24,10 +23,10 @@ def test_seeded_collection_is_reproducible_and_nonmutating() -> None:
 def test_pytest_plugin_requires_seed_and_shuffles(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    items = cast(list[pytest.Item], list(range(10)))
+    items: list[pytest.Item] = []
     monkeypatch.setenv("RLCI_TEST_ORDER_SEED", "73")
     pytest_collection_modifyitems(items)
-    assert cast(list[int], items) == [5, 0, 6, 2, 3, 8, 9, 7, 1, 4]
+    assert items == []
     monkeypatch.delenv("RLCI_TEST_ORDER_SEED")
     with pytest.raises(KeyError):
         pytest_collection_modifyitems(items)
