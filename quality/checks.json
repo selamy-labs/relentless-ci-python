@@ -146,7 +146,7 @@
   [
     "python",
     "-m",
-    "quality.stability"
+    "quality.stability_main"
   ],
   [
     "python",

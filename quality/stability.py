@@ -35,7 +35,3 @@ def run_all(root: Path) -> None:
             flush=True,
         )
         run_variant(root, variant)
-
-
-if __name__ == "__main__":
-    run_all(Path.cwd())

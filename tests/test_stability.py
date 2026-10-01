@@ -77,7 +77,7 @@ def test_full_gate_and_registered_entrypoint(
     ]
     with patch("subprocess.run") as entry_child:
         runpy.run_path(
-            str(Path(__file__).resolve().parents[1] / "quality/stability.py"),
+            str(Path(__file__).resolve().parents[1] / "quality/stability_main.py"),
             run_name="__main__",
         )
     assert entry_child.call_count == 2
@@ -97,4 +97,4 @@ def test_check_registry_enrolls_stability() -> None:
     checks = json.loads(
         (Path(__file__).resolve().parents[1] / "quality/checks.json").read_text()
     )
-    assert ["python", "-m", "quality.stability"] in checks
+    assert ["python", "-m", "quality.stability_main"] in checks
