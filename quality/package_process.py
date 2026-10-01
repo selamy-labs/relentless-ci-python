@@ -85,7 +85,7 @@ def install_guard(virtual: Path) -> None:
     guard.write_text(GUARD, encoding="utf-8")
 
 
-def environment(root: Path | None = None) -> dict[str, str]:
+def environment(root: "Path | None" = None) -> dict[str, str]:
     env = {key: value for key, value in os.environ.items() if key in PLATFORM}
     if root is not None:
         for key in (
