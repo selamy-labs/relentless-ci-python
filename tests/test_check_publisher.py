@@ -18,7 +18,10 @@ from quality.trusted_policy.check_publisher import (
 from quality.trusted_policy.review_policy import PolicyFailure
 
 HEAD = "a" * 40
-TARGET = Target("owner/repo", 41)
+
+
+def target() -> Target:
+    return Target("owner/repo", 41)
 
 
 def fake_cli(root: Path, mode: str) -> Path:
@@ -74,11 +77,13 @@ def fake_cli(root: Path, mode: str) -> Path:
 
 
 def test_native_app_check_is_created_and_read_back(tmp_path: Path) -> None:
-    assert GithubChecks(fake_cli(tmp_path, "normal"), TARGET).create(HEAD, True) == 77
+    assert GithubChecks(fake_cli(tmp_path, "normal"), target()).create(HEAD, True) == 77
 
 
 def test_native_app_failure_check_is_created_and_read_back(tmp_path: Path) -> None:
-    assert GithubChecks(fake_cli(tmp_path, "failure"), TARGET).create(HEAD, False) == 77
+    assert (
+        GithubChecks(fake_cli(tmp_path, "failure"), target()).create(HEAD, False) == 77
+    )
 
 
 @pytest.mark.parametrize(
@@ -97,12 +102,13 @@ def test_failed_or_unbound_native_check_never_qualifies(
     tmp_path: Path, mode: str
 ) -> None:
     with pytest.raises(PolicyFailure):
-        GithubChecks(fake_cli(tmp_path, mode), TARGET).create(HEAD, True)
+        GithubChecks(fake_cli(tmp_path, mode), target()).create(HEAD, True)
 
 
 def test_native_check_readback_compares_large_ids_by_value(tmp_path: Path) -> None:
     assert (
-        GithubChecks(fake_cli(tmp_path, "large_id"), TARGET).create(HEAD, True) == 1000
+        GithubChecks(fake_cli(tmp_path, "large_id"), target()).create(HEAD, True)
+        == 1000
     )
 
 
@@ -118,7 +124,7 @@ def test_check_transport_has_exact_timeout(
         return cast(subprocess.CompletedProcess[bytes], native_run(*args, **kwargs))  # type: ignore[call-overload]
 
     monkeypatch.setattr(subprocess, "run", tracked_run)
-    assert GithubChecks(fake_cli(tmp_path, "normal"), TARGET).create(HEAD, True) == 77
+    assert GithubChecks(fake_cli(tmp_path, "normal"), target()).create(HEAD, True) == 77
 
 
 def test_negative_native_exit_is_failure(
@@ -131,12 +137,12 @@ def test_negative_native_exit_is_failure(
 
     monkeypatch.setattr(subprocess, "run", interrupted)
     with pytest.raises(PolicyFailure, match="creation failed"):
-        GithubChecks(fake_cli(tmp_path, "normal"), TARGET).create(HEAD, True)
+        GithubChecks(fake_cli(tmp_path, "normal"), target()).create(HEAD, True)
 
 
 @pytest.mark.parametrize("passed,conclusion", [(True, "success"), (False, "failure")])
 def test_compiled_check_has_terminal_decision(passed: bool, conclusion: str) -> None:
-    body = payload(TARGET, HEAD, passed)
+    body = payload(target(), HEAD, passed)
     assert (body["name"], body["status"], body["conclusion"]) == (
         CONTEXT,
         "completed",
@@ -157,7 +163,7 @@ def test_compiled_check_has_terminal_decision(passed: bool, conclusion: str) -> 
 @pytest.mark.parametrize("head,passed", [("b" * 39, True), (HEAD, 1), (HEAD, "yes")])
 def test_uncompiled_head_or_decision_is_rejected(head: str, passed: object) -> None:
     with pytest.raises(PolicyFailure):
-        payload(TARGET, head, passed)
+        payload(target(), head, passed)
 
 
 def test_compiled_decision_rejects_class_that_compares_equal_to_bool() -> None:
@@ -172,7 +178,7 @@ def test_compiled_decision_rejects_class_that_compares_equal_to_bool() -> None:
         pass
 
     with pytest.raises(PolicyFailure):
-        payload(TARGET, HEAD, FakeBool())
+        payload(target(), HEAD, FakeBool())
 
 
 def test_context_compares_text_values_in_both_directions() -> None:
@@ -210,7 +216,7 @@ def test_context_and_app_identity_are_fixed() -> None:
         "app": {"id": 42},
     }
     with pytest.raises(PolicyFailure):
-        verify_response(response, TARGET, payload(TARGET, HEAD, True))
+        verify_response(response, target(), payload(target(), HEAD, True))
     large = Target("owner/repo", int("1000"))
     assert (
         verify_response(
