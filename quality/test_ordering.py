@@ -43,12 +43,11 @@ FAST_FIRST = (
     "tests/test_incomplete.py",
     "tests/test_repository_hygiene.py",
 )
+FAST_RANK = {name: index for index, name in enumerate(FAST_FIRST)}
 
 
 def priority(node: str) -> tuple[bool, int, str]:
     """Order the full collection by reviewed first-kill evidence and node ID."""
     file = node.partition("::")[0]
     late = file in NATIVE_RECEIPTS or node == CLEANUP_PROBE
-    if file in FAST_FIRST:
-        return late, FAST_FIRST.index(file), node
-    return late, len(FAST_FIRST), node
+    return late, FAST_RANK.get(file, len(FAST_FIRST)), node
