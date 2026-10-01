@@ -31,6 +31,7 @@ def test_isolated_consumer_commands_and_cleanup(
     received: list[list[str]] = []
     roots: list[Path] = []
     probes: list[tuple[list[str], str, tuple[int, str, str]]] = []
+    guards: list[Path] = []
 
     def command(
         arguments: list[str], root: Path, timeout: float, env: dict[str, str]
@@ -55,6 +56,7 @@ def test_isolated_consumer_commands_and_cleanup(
 
     monkeypatch.setattr(package_consumer, "run", command)
     monkeypatch.setattr(package_consumer, "expect", probe)
+    monkeypatch.setattr(package_consumer, "install_guard", guards.append)
     package_consumer.installed_consumer(wheel)
     root = roots[0]
     python = str(package_consumer.executable(root / "environment", "python", os.name))
@@ -110,6 +112,7 @@ def test_isolated_consumer_commands_and_cleanup(
         ),
     ]
     assert all(item == root for item in roots)
+    assert guards == [root / "environment"]
     assert not root.exists()
 
 
