@@ -1,7 +1,6 @@
 # Repository hygiene
 
-The full local command and Linux analysis jobs run `python -m
-quality.repository_hygiene_main` from the protected check registry. The gate
+The full local command and Linux analysis jobs run `python -m quality.repository_hygiene_main` from the protected check registry. The gate
 compares the native Git index with the filesystem, including untracked and
 ignored authored files. It rejects case or Unicode path collisions, authored
 symlinks, unsupported file kinds or text types, invalid UTF-8, NUL bytes and
