@@ -83,6 +83,14 @@ def test_full_gate_and_registered_entrypoint(
     assert entry_child.call_count == 2
 
 
+def test_nonmain_module_name_never_runs_the_suite() -> None:
+    path = Path(__file__).resolve().parents[1] / "quality/stability.py"
+    with patch("subprocess.run") as child, patch("builtins.print") as label:
+        runpy.run_path(str(path), run_name="!not-main")
+    child.assert_not_called()
+    label.assert_not_called()
+
+
 def test_check_registry_enrolls_stability() -> None:
     import json
 
