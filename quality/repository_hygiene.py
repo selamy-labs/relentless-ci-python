@@ -74,7 +74,7 @@ def verify_repository(root: Path) -> None:
     """Validate native index and filesystem contents from the same root."""
     indexed = git_paths(root)
     verify_path_names(indexed)
-    names = sorted(set(indexed + disk_files(root, root, top_level=True)))
+    names = sorted(set(indexed + disk_files(root=root, directory=root, top_level=True)))
     verify_path_names(names)
     for name in names:
         verify_text_kind(name)
