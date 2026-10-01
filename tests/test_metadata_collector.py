@@ -14,12 +14,16 @@ from tests.test_review_policy import BASE, HEAD, commit, pull_request, review, r
 REPOSITORY = "repos/owner/repo"
 PR = REPOSITORY + "/pulls/1"
 RUN = REPOSITORY + "/actions/runs/1"
-POLICY = Policy("owner/repo", 1, HEAD, BASE, 2, 1, frozenset(NAMES))
+
+
+def policy() -> Policy:
+    return Policy("owner/repo", 1, HEAD, BASE, 2, 1, frozenset(NAMES))
 
 
 def test_reviewed_policy_is_immutable_during_native_evaluation() -> None:
+    value = policy()
     with pytest.raises(FrozenInstanceError):
-        POLICY.head = BASE  # type: ignore[misc]
+        value.head = BASE  # type: ignore[misc]
 
 
 class NativeAPI:
@@ -52,7 +56,7 @@ def source() -> dict[str, list[object]]:
 def test_complete_native_collection_evaluates_current_approved_candidate() -> None:
     api = NativeAPI(source())
 
-    assert evaluate(api, POLICY) == 2
+    assert evaluate(api, policy()) == 2
     assert api.routes.count(PR) == 2
     assert api.routes.count(RUN) == 2
     assert api.routes.count(PR + "/reviews?per_page=100&page=2") == 2
@@ -65,7 +69,7 @@ def test_run_must_match_current_native_head(head: object) -> None:
     changed["head"] = {"sha": head}
     values[PR] = [changed]
     with pytest.raises(PolicyFailure):
-        evaluate(NativeAPI(values), POLICY)
+        evaluate(NativeAPI(values), policy())
 
 
 @pytest.mark.parametrize(
@@ -83,7 +87,7 @@ def test_run_must_be_associated_with_current_pr(field: str, value: object) -> No
     changed["pull_requests"] = [association]
     values[RUN] = [changed]
     with pytest.raises(PolicyFailure, match="associated"):
-        evaluate(NativeAPI(values), POLICY)
+        evaluate(NativeAPI(values), policy())
 
 
 def test_run_with_multiple_pr_associations_cannot_qualify() -> None:
@@ -93,7 +97,7 @@ def test_run_with_multiple_pr_associations_cannot_qualify() -> None:
     associations.append(associations[0])
     values[RUN] = [changed]
     with pytest.raises(PolicyFailure, match="associated"):
-        evaluate(NativeAPI(values), POLICY)
+        evaluate(NativeAPI(values), policy())
 
 
 def test_test_merge_change_during_collection_fails() -> None:
@@ -102,7 +106,7 @@ def test_test_merge_change_during_collection_fails() -> None:
     changed["merge_commit_sha"] = HEAD
     values[PR] = [pull_request(), changed]
     with pytest.raises(PolicyFailure, match="candidate metadata changed"):
-        evaluate(NativeAPI(values), POLICY)
+        evaluate(NativeAPI(values), policy())
 
 
 @pytest.mark.parametrize(
@@ -122,7 +126,7 @@ def test_candidate_readback_changes_fail(field: str, value: object) -> None:
     values[PR] = [pull_request(), changed]
 
     with pytest.raises(PolicyFailure):
-        evaluate(NativeAPI(values), POLICY)
+        evaluate(NativeAPI(values), policy())
 
 
 def test_review_revocation_during_collection_fails() -> None:
@@ -133,7 +137,7 @@ def test_review_revocation_during_collection_fails() -> None:
     ]
 
     with pytest.raises(PolicyFailure, match="review inventory changed"):
-        evaluate(NativeAPI(values), POLICY)
+        evaluate(NativeAPI(values), policy())
 
 
 def test_workflow_attempt_change_during_collection_fails() -> None:
@@ -143,7 +147,7 @@ def test_workflow_attempt_change_during_collection_fails() -> None:
     values[RUN] = [workflow(), changed]
 
     with pytest.raises(PolicyFailure, match="workflow run changed"):
-        evaluate(NativeAPI(values), POLICY)
+        evaluate(NativeAPI(values), policy())
 
 
 def test_unsafe_reviewer_login_cannot_create_arbitrary_endpoint() -> None:
@@ -153,7 +157,7 @@ def test_unsafe_reviewer_login_cannot_create_arbitrary_endpoint() -> None:
     values[PR + "/reviews?per_page=100&page=1"] = [[changed]]
 
     with pytest.raises(PolicyFailure, match="safe path"):
-        evaluate(NativeAPI(values), POLICY)
+        evaluate(NativeAPI(values), policy())
 
 
 def test_truncated_commit_inventory_does_not_authorize_approval() -> None:
@@ -161,7 +165,7 @@ def test_truncated_commit_inventory_does_not_authorize_approval() -> None:
     values[PR + "/commits?per_page=100&page=1"] = [[]]
 
     with pytest.raises(PolicyFailure, match="commit inventory"):
-        evaluate(NativeAPI(values), POLICY)
+        evaluate(NativeAPI(values), policy())
 
 
 def test_removed_maintainer_role_during_collection_fails() -> None:
@@ -172,4 +176,4 @@ def test_removed_maintainer_role_during_collection_fails() -> None:
     ]
 
     with pytest.raises(PolicyFailure, match="roles changed"):
-        evaluate(NativeAPI(values), POLICY)
+        evaluate(NativeAPI(values), policy())
