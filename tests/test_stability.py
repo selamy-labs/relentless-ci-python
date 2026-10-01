@@ -64,7 +64,10 @@ def test_full_gate_and_registered_entrypoint(
     with patch("quality.stability.subprocess.run") as child:
         run_all(tmp_path)
     assert child.call_count == 2
-    assert "stability seed=41" in capsys.readouterr().out
+    assert capsys.readouterr().out.splitlines() == [
+        "stability seed=41 timezone=UTC0 locale=C",
+        "stability seed=73 timezone=UTC-14 locale=C.UTF-8",
+    ]
     with patch("subprocess.run") as entry_child:
         runpy.run_path(
             str(Path(__file__).resolve().parents[1] / "quality/stability.py"),
