@@ -160,7 +160,9 @@ def test_entrypoint_replaces_stale_receipt_only_after_success(
     policy, _ = fixture(tmp_path)
     monkeypatch.chdir(tmp_path)
     report = tmp_path / ".quality-results/component-inventory.json"
-    report.parent.mkdir()
+    assert not report.exists()
+    runpy.run_module("quality.component_inventory_main", run_name="__main__")
+    assert json.loads(report.read_text())["componentCount"] == 2
     report.write_text("stale")
     runpy.run_module("quality.component_inventory_main", run_name="__main__")
     actual = report.read_text()
