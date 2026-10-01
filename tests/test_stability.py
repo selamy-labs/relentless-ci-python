@@ -58,6 +58,13 @@ def test_failure_stops_before_second_attempt(tmp_path: Path) -> None:
     assert child.call_count == 1
 
 
+def test_variant_labels_flush_before_each_child(tmp_path: Path) -> None:
+    with patch("builtins.print") as label, patch("quality.stability.subprocess.run"):
+        run_all(tmp_path)
+    assert label.call_count == 2
+    assert [call.kwargs["flush"] for call in label.call_args_list] == [True, True]
+
+
 def test_full_gate_and_registered_entrypoint(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
