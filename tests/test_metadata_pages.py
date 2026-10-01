@@ -88,7 +88,7 @@ def test_large_native_count_compares_integer_value() -> None:
 
 
 def test_stable_count_compares_values_in_both_directions() -> None:
-    assert stable_count(-1, 0) == 0
+    assert stable_count(None, 0) == 0
     assert stable_count(int("1000"), int("1000")) == 1000
     for previous, current in ((1, 2), (2, 1)):
         with pytest.raises(PolicyFailure, match="changed"):

@@ -58,15 +58,15 @@ def object_page(value: object, key: str) -> tuple[int, list[object]]:
     return count(response["total_count"]), items(response[key])
 
 
-def stable_count(previous: int, current: int) -> int:
-    if previous != -1 and previous != current:
+def stable_count(previous: object, current: int) -> int:
+    if previous is not None and previous != current:
         raise PolicyFailure("native inventory changed during pagination")
     return current
 
 
 def object_inventory(api: ReadAPI, endpoint: str, key: str) -> tuple[int, list[object]]:
     result: list[object] = []
-    total = -1
+    total: int | None = None
     for page in page_numbers(1):
         if page > MAX_PAGES:
             raise PolicyFailure("native inventory exceeded complete collection budget")
