@@ -48,6 +48,8 @@ def test_missing_stale_or_short_reason_fails(body: object) -> None:
 def test_author_association_cannot_replace_native_reviewer_identity() -> None:
     with pytest.raises(PolicyFailure, match="missing"):
         require_comment([comment(author=4)], 2, HEAD, ISSUE, True)
+    with pytest.raises(PolicyFailure, match="missing"):
+        require_comment([comment(author=1)], 2, HEAD, ISSUE, True)
 
 
 def test_unrelated_comments_do_not_hide_valid_comment() -> None:
@@ -78,6 +80,12 @@ def test_equal_reviewer_identifiers_do_not_require_object_identity() -> None:
     reviewer = int("1001")
     assert author == reviewer and author is not reviewer
     assert require_comment([comment(author=author)], reviewer, HEAD, ISSUE, True) == 1
+
+
+def test_equal_issue_urls_do_not_require_object_identity() -> None:
+    url = "".join((ISSUE[:-1], ISSUE[-1]))
+    assert url == ISSUE and url is not ISSUE
+    assert require_comment([{**comment(), "issue_url": url}], 2, HEAD, ISSUE, True) == 1
 
 
 @pytest.mark.parametrize("complete", [False, None, 1])
