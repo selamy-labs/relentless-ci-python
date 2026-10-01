@@ -9,5 +9,5 @@ def main() -> None:
     verify_readme_example(Path.cwd())
 
 
-if __name__ == "__main__":
+if __name__ in {"__main__"}:
     main()

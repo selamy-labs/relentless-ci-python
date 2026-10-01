@@ -56,12 +56,12 @@ def evidence(entry: dict[str, object], item: dict[str, object]) -> None:
     url = text(entry["evidenceUrl"])
     name, version = text(item["name"]), text(item["version"])
     expected = f"https://pypi.org/pypi/{name}/{version}/json"
-    if kind == "pypi-release-metadata" and url == expected:
+    if kind in {"pypi-release-metadata"} and url == expected:
         return
     source = text(record(item["sdist"])["url"])
     prefix = source + "#"
     if (
-        kind == "locked-sdist-license-file"
+        kind in {"locked-sdist-license-file"}
         and url.startswith(prefix)
         and url.removeprefix(prefix)
     ):
