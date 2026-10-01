@@ -65,9 +65,13 @@ def test_authored_symlink_and_fifo_fail(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="symlink"):
         disk_files(tmp_path, tmp_path, top_level=True)
     (tmp_path / "link.md").unlink()
-    os.mkfifo(tmp_path / "channel")
-    with pytest.raises(ValueError, match="file kind"):
-        disk_files(tmp_path, tmp_path, top_level=True)
+    channel = tmp_path / "channel"
+    os.mkfifo(channel)
+    try:
+        with pytest.raises(ValueError, match="file kind"):
+            disk_files(tmp_path, tmp_path, top_level=True)
+    finally:
+        channel.unlink()
 
 
 @pytest.mark.parametrize("name", ["image.png", "script.sh", "README"])

@@ -32,7 +32,7 @@ def git_paths(root: Path) -> list[str]:
     return data[:-1].decode("utf-8").split("\0")
 
 
-def disk_files(root: Path, directory: Path, *, top_level: bool) -> list[str]:
+def disk_files(root: Path, directory: Path, top_level: bool) -> list[str]:
     """Include ignored authored text while omitting exact generated roots."""
     names: list[str] = []
     for path in directory.iterdir():
