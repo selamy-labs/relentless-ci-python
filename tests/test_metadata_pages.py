@@ -6,9 +6,12 @@ import pytest
 
 from quality.trusted_policy.metadata_pages import (
     array_inventory,
+    complete_object_inventory,
+    count,
     object_inventory,
     page_route,
     sequence,
+    stable_count,
 )
 from quality.trusted_policy.review_policy import PolicyFailure
 
@@ -63,6 +66,46 @@ def test_zero_native_jobs_returns_complete_empty_inventory() -> None:
     api = Pages([{"total_count": 0, "jobs": []}])
 
     assert object_inventory(api, "endpoint", "jobs") == (0, [])
+
+
+@pytest.mark.parametrize("object_shape", [False, True])
+def test_terminal_empty_page_at_exact_collection_budget(object_shape: bool) -> None:
+    if object_shape:
+        pages: list[object] = [{"total_count": 999, "jobs": [1]} for _ in range(999)]
+        pages.append({"total_count": 999, "jobs": []})
+        api = Pages(pages)
+        assert object_inventory(api, "endpoint", "jobs") == (999, [1] * 999)
+    else:
+        array_pages: list[object] = [[1] for _ in range(999)]
+        array_pages.append([])
+        api = Pages(array_pages)
+        assert array_inventory(api, "endpoint") == [1] * 999
+    assert api.routes[-1].endswith("&page=1000")
+
+
+def test_large_native_count_compares_integer_value() -> None:
+    assert complete_object_inventory(int("257"), [1] * 257) == (257, [1] * 257)
+
+
+def test_stable_count_compares_values_in_both_directions() -> None:
+    assert stable_count(-1, 0) == 0
+    assert stable_count(int("1000"), int("1000")) == 1000
+    for previous, current in ((1, 2), (2, 1)):
+        with pytest.raises(PolicyFailure, match="changed"):
+            stable_count(previous, current)
+
+
+def test_zero_count_rejects_object_with_deceptive_equality() -> None:
+    class EqualInt(type):
+        def __eq__(cls, other: object) -> bool:
+            return other is int
+
+    class FakeZero(metaclass=EqualInt):
+        def __eq__(self, other: object) -> bool:
+            return other == 0
+
+    with pytest.raises(PolicyFailure):
+        count(FakeZero())
 
 
 @pytest.mark.parametrize("value", [None, {}, "array", list(range(101))])

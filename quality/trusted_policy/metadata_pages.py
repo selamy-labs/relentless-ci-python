@@ -1,6 +1,7 @@
 """Bounded complete native GitHub inventories; no PR-supplied pagination input."""
 
 from collections.abc import Callable
+from itertools import count as page_numbers
 from typing import TypeGuard
 
 from quality.trusted_policy.review_policy import PolicyFailure, identifier, record
@@ -36,7 +37,9 @@ def page_route(endpoint: str, page: int) -> str:
 
 def array_inventory(api: ReadAPI, endpoint: str) -> list[object]:
     result: list[object] = []
-    for page in range(1, MAX_PAGES + 1):
+    for page in page_numbers(1):
+        if page > MAX_PAGES:
+            raise PolicyFailure("native inventory exceeded complete collection budget")
         current = items(api(page_route(endpoint, page)))
         if not current:
             return result
@@ -55,16 +58,18 @@ def object_page(value: object, key: str) -> tuple[int, list[object]]:
     return count(response["total_count"]), items(response[key])
 
 
-def stable_count(previous: int | None, current: int) -> int:
-    if previous is not None and previous != current:
+def stable_count(previous: int, current: int) -> int:
+    if previous != -1 and previous != current:
         raise PolicyFailure("native inventory changed during pagination")
     return current
 
 
 def object_inventory(api: ReadAPI, endpoint: str, key: str) -> tuple[int, list[object]]:
     result: list[object] = []
-    total: int | None = None
-    for page in range(1, MAX_PAGES + 1):
+    total = -1
+    for page in page_numbers(1):
+        if page > MAX_PAGES:
+            raise PolicyFailure("native inventory exceeded complete collection budget")
         current, values = object_page(api(page_route(endpoint, page)), key)
         total = stable_count(total, current)
         if not values:
