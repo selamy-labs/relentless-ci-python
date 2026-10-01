@@ -86,8 +86,10 @@ def test_complete_inventory_binds_each_component_and_project(tmp_path: Path) -> 
 @pytest.mark.parametrize(
     ("field", "value", "message"),
     [
+        ("version", 0, "unsupported component license policy version"),
         ("version", 2, "unsupported component license policy version"),
         ("projectLicense", "BSD-3-Clause", "project license differs"),
+        ("projectLicense", "Zlib", "project license differs"),
         ("projectLicenseSha256", HASH, "project license notice differs"),
         ("projectLicenseSha256", "0" * 64, "project license notice differs"),
         ("approvedExpressions", ["MIT", "Apache-2.0", "UNKNOWN"], "approved SPDX"),
@@ -108,6 +110,8 @@ def test_unreviewed_top_level_policy_fails(
     [
         ("alpha==1.0.0", "spdx", "UNKNOWN", "SPDX expression requires review"),
         ("alpha==1.0.0", "evidenceSha256", "bad", "canonical SHA-256"),
+        ("alpha==1.0.0", "evidenceKind", "a-invalid", "provenance"),
+        ("alpha==1.0.0", "evidenceKind", "z-invalid", "provenance"),
         ("alpha==1.0.0", "evidenceUrl", "https://unapproved.example/a", "provenance"),
         (
             "alpha==1.0.0",
@@ -115,6 +119,8 @@ def test_unreviewed_top_level_policy_fails(
             "https://pypi.org/pypi/alpha/1.0.0/jso",
             "provenance",
         ),
+        ("beta==2.0.0", "evidenceKind", "a-invalid", "provenance"),
+        ("beta==2.0.0", "evidenceKind", "z-invalid", "provenance"),
         ("beta==2.0.0", "evidenceUrl", SOURCE + "beta-2.0.0.tar.gz#", "provenance"),
     ],
 )
