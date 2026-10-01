@@ -1,17 +1,54 @@
-"""Keep costly native receipt probes after the tests that usually kill defects."""
+"""Run historically effective cheap witnesses first without filtering tests."""
 
 CLEANUP_PROBE = (
     "tests/test_process_cleanup.py::"
     "test_native_timeout_terminates_descendant_before_it_writes"
 )
-
-
-def priority(node: str) -> tuple[bool, str]:
-    """Change execution order without filtering or changing collected identities."""
-    native_receipt = node.split("::")[0] in (
+NATIVE_RECEIPTS = frozenset(
+    (
         "tests/test_pytest_integrity.py",
         "tests/test_owned_process_native.py",
         "tests/test_owned_caller_native.py",
     )
-    native_cleanup = node == CLEANUP_PROBE
-    return native_receipt or native_cleanup, node
+)
+FAST_FIRST = (
+    "tests/test_annotation_contract.py",
+    "tests/test_security_runner.py",
+    "tests/test_package_consumer.py",
+    "tests/test_component_inventory.py",
+    "tests/test_mutation_services.py",
+    "tests/test_package_build.py",
+    "tests/test_build_constraints.py",
+    "tests/test_package_archive.py",
+    "tests/test_owned_commands.py",
+    "tests/test_workflow_paths.py",
+    "tests/test_owned_process.py",
+    "tests/test_duplication.py",
+    "tests/test_mutation_report.py",
+    "tests/test_mutation_transport.py",
+    "tests/test_mutation_runner.py",
+    "tests/test_deadline.py",
+    "tests/test_mutation_pool.py",
+    "tests/test_pipeline.py",
+    "tests/test_portable_paths.py",
+    "tests/test_cli.py",
+    "tests/test_owned_receipt.py",
+    "tests/test_runtime_support.py",
+    "tests/test_package_boundaries.py",
+    "tests/test_intervals.py",
+    "tests/test_mutation_journal.py",
+    "tests/test_early_ordering.py",
+    "tests/test_document_links.py",
+    "tests/test_stability.py",
+    "tests/test_incomplete.py",
+    "tests/test_repository_hygiene.py",
+)
+
+
+def priority(node: str) -> tuple[bool, int, str]:
+    """Order the full collection by reviewed first-kill evidence and node ID."""
+    file = node.split("::", 1)[0]
+    late = file in NATIVE_RECEIPTS or node == CLEANUP_PROBE
+    if file in FAST_FIRST:
+        return late, FAST_FIRST.index(file), node
+    return late, len(FAST_FIRST), node

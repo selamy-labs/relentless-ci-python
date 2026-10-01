@@ -39,7 +39,7 @@ handling while preserving the exact complete-result check.
 
 Individual trials have a 60-second limit. Initialization and baseline use the
 ordinary 1,800-second command deadline. Full mutation execution has a separate
-14,400-second deadline in `quality/mutation-timeout.json`. These deadlines bound
+21,240-second deadline in `quality/mutation-timeout.json`. These deadlines bound
 execution; reaching one never counts as a killed mutant or a successful gate.
 The separate execution budget accommodates the complete verifier mutation plan.
 The first hosted Linux matrix, on standard four-CPU runners, retained between
@@ -58,11 +58,30 @@ Broad gate enrollment then expanded the plan to 4,142 mutants. An isolated
 outputs, which the strict validator rejected even where Cosmic Ray labelled
 them killed. The full baseline takes about 20 seconds on this host, leaving
 little headroom under a 30-second trial limit for a surviving mutant or worker
-contention. The 60-second individual trial, 14,400-second whole-pool bound and
-260-minute hosted job allow complete classification of the broader plan. They
+contention. The 60-second individual trial, former 14,400-second whole-pool bound and
+260-minute hosted job allowed classification of the earlier broader plan. They
 do not reduce the test inventory, source scope, operators or result validation;
 timeouts, cancellations and partial outcomes still fail. The broader inventory
 must qualify independently before its hosted result can be credited.
+
+The public 4,318-mutant PR run completed Python 3.14 but hit the 14,400-second
+pool deadline on 3.12 with only 3,927 recorded results. Python 3.11 and 3.13
+reported uncreditable pytest collection errors from mutation of an evaluated
+type annotation. The annotation is quoted in this candidate so its static
+meaning remains intact. The private renamed-copy matrix also timed out with
+partial raw sessions on all four Linux runtimes. The owned pool allowance is
+now 354 minutes and the standard hosted analysis job 359 minutes, below the
+six-hour hosted job ceiling. A timeout still fails, and every source, operator,
+test, and raw-result integrity check remains enrolled.
+
+A complete 4,318-result local session identifies each mutant's first failing
+test, and a hosted Python 3.13 baseline supplies all 1,378 test timings. The 30
+cheapest high-yield witness files now run first while the entire collected test
+inventory and `pytest -x` trial command remain unchanged. The historical model
+reduces mean time before a known failure from 7.69 to 2.67 seconds; process
+startup and mutation interactions are not modeled. The fixed rank and unknown
+file fallback are source-bound and tested. A fresh full local run and all four
+hosted Linux runtimes must prove the actual speed and strict kills.
 
 Run the same full local verifier described in the README. It requires no paid
 service or account credentials for mutation analysis. Hosted matrix enforcement

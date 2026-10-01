@@ -23,7 +23,7 @@ jobs:
   analysis:
     name: Full analysis (Python ${{ matrix.python }})
     runs-on: ubuntu-24.04
-    timeout-minutes: 260
+    timeout-minutes: 359
     strategy:
       fail-fast: false
       matrix:
