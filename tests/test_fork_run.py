@@ -5,7 +5,7 @@ from copy import deepcopy
 
 import pytest
 
-from quality.trusted_policy.fork_run import unique_pull
+from quality.trusted_policy.fork_run import same_head, unique_pull
 from quality.trusted_policy.review_policy import PolicyFailure
 from tests.test_metadata_collector import REPOSITORY, NativeAPI
 from tests.test_review_policy import BASE, HEAD
@@ -48,6 +48,53 @@ def test_unique_exact_fork_pr_is_resolved_from_complete_native_list() -> None:
     native = api([pull()])
     assert unique_pull(native, REPOSITORY, run(), 77, 2, BASE) == 1
     assert native.routes == [PAGE1, PAGE2]
+
+
+def test_equal_native_fork_values_can_be_distinct_objects() -> None:
+    native = run()
+    candidate = pull()
+    head = candidate["head"]
+    repository = head["repo"]  # type: ignore[index]
+    assert isinstance(head, dict) and isinstance(repository, dict)
+    candidate["base"] = {"sha": BASE.encode().decode()}
+    head["sha"] = HEAD.encode().decode()
+    head["ref"] = b"feature".decode()
+    repository["id"] = int("1000")
+    repository["full_name"] = b"contributor/copy".decode()
+    native["head_repository"] = {
+        "id": int("1000"),
+        "full_name": "contributor/copy",
+    }
+    assert same_head(native, candidate, BASE)
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("base", {"sha": "c" * 40}),
+        ("sha", "0" * 40),
+        ("ref", "a"),
+        ("repository_id", 98),
+        ("repository_name", "a/copy"),
+    ],
+)
+def test_fork_head_rejects_lexically_earlier_or_later_mismatches(
+    field: str, value: object
+) -> None:
+    candidate = pull()
+    head = candidate["head"]
+    assert isinstance(head, dict)
+    repository = head["repo"]
+    assert isinstance(repository, dict)
+    if field == "base":
+        candidate["base"] = value
+    elif field == "repository_id":
+        repository["id"] = value
+    elif field == "repository_name":
+        repository["full_name"] = value
+    else:
+        head[field] = value
+    assert not same_head(run(), candidate, BASE)
 
 
 @pytest.mark.parametrize(
@@ -111,6 +158,21 @@ def test_run_identity_must_be_current_and_completed(field: str, value: object) -
     changed[field] = value
     with pytest.raises(PolicyFailure, match="native completed"):
         unique_pull(api([pull()]), REPOSITORY, changed, 77, 2, BASE)
+
+
+def test_run_numeric_identities_compare_values_in_both_directions() -> None:
+    native = run()
+    native["id"] = int("1000")
+    native["workflow_id"] = int("1000")
+    assert (
+        unique_pull(api([pull()]), REPOSITORY, native, int("1000"), int("1000"), BASE)
+        == 1
+    )
+    for field, value in (("id", 76), ("workflow_id", 1)):
+        changed = run()
+        changed[field] = value
+        with pytest.raises(PolicyFailure, match="identity differs"):
+            unique_pull(api([pull()]), REPOSITORY, changed, 77, 2, BASE)
 
 
 def test_incomplete_pull_pagination_fails_closed() -> None:

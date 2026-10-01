@@ -43,4 +43,4 @@ def unique_pull(
     ]
     if len(candidates) != 1:
         raise PolicyFailure("fork run does not identify exactly one current PR")
-    return candidates[0]
+    return candidates.pop()
