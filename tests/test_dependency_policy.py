@@ -71,10 +71,10 @@ def test_missing_or_extra_editable_root_fails(tmp_path: Path) -> None:
         verify(root)
 
 
-def test_empty_lock_inventory_fails(tmp_path: Path) -> None:
+def test_missing_lock_inventory_fails(tmp_path: Path) -> None:
     root = lock_root(tmp_path)
     (root / "uv.lock").write_text("version = 1\n")
-    with pytest.raises(ValueError, match="inventory must be nonempty"):
+    with pytest.raises(ValueError, match="inventory must be an array"):
         verify(root)
 
 
@@ -110,7 +110,10 @@ def test_non_text_rejected(value: object) -> None:
     "url",
     [
         "http://files.pythonhosted.org/packages/a.whl",
+        "zttps://files.pythonhosted.org/packages/a.whl",
         "https://files.pythonhosted.org.evil/packages/a.whl",
+        "https://afiles.pythonhosted.org/packages/a.whl",
+        "https://zfiles.pythonhosted.org/packages/a.whl",
         "https://user@files.pythonhosted.org/packages/a.whl",
         "https://files.pythonhosted.org:443/packages/a.whl",
         "https://files.pythonhosted.org/other/a.whl",
@@ -150,3 +153,85 @@ def test_wheels_must_be_array() -> None:
     }
     with pytest.raises(ValueError, match="wheels must be an array"):
         package(item, "project")
+
+
+def registry_item(name: str) -> dict[str, object]:
+    """Build a registry entry with the exact origin and artifact shape."""
+    return {
+        "name": name,
+        "version": "1",
+        "source": {"registry": "https://pypi.org/simple"},
+        "sdist": {
+            "url": "https://files.pythonhosted.org/packages/a.tar.gz",
+            "hash": "sha256:" + "a" * 64,
+            "size": 1,
+        },
+        "wheels": [],
+    }
+
+
+@pytest.mark.parametrize("name", ["alpha", "zulu"])
+def test_editable_entry_must_name_its_project(name: str) -> None:
+    item: dict[str, object] = {
+        "name": name,
+        "version": "1",
+        "source": {"editable": "."},
+    }
+    with pytest.raises(ValueError, match="project root"):
+        package(item, "middle")
+
+
+def test_registry_entry_named_like_project_remains_registry() -> None:
+    assert package(registry_item("project"), "project") is True
+
+
+def test_unapproved_wheel_is_rejected() -> None:
+    item = registry_item("dependency")
+    item["wheels"] = [
+        {
+            "url": "https://example.invalid/packages/a.whl",
+            "hash": "sha256:" + "a" * 64,
+            "size": 1,
+        }
+    ]
+    with pytest.raises(ValueError, match="approved PyPI origin"):
+        package(item, "project")
+
+
+def small_lock(tmp_path: Path, blocks: list[str]) -> Path:
+    """Exercise root counting with a two-entry graph, unlike the 65-entry lock."""
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "middle"\n')
+    (tmp_path / "uv.lock").write_text("version = 1\n" + "".join(blocks))
+    return tmp_path
+
+
+REGISTRY_BLOCK = (
+    '\n[[package]]\nname = "dependency"\nversion = "1"\n'
+    'source = { registry = "https://pypi.org/simple" }\n'
+    'sdist = { url = "https://files.pythonhosted.org/packages/a.tar.gz", '
+    'hash = "sha256:' + "a" * 64 + '", size = 1 }\n'
+)
+ROOT_BLOCK = (
+    '\n[[package]]\nname = "middle"\nversion = "1"\n' 'source = { editable = "." }\n'
+)
+
+
+def test_small_valid_lock_has_exactly_one_root(tmp_path: Path) -> None:
+    assert verify(small_lock(tmp_path, [REGISTRY_BLOCK, ROOT_BLOCK])) == (1, 2)
+
+
+@pytest.mark.parametrize(
+    "blocks",
+    [[REGISTRY_BLOCK, REGISTRY_BLOCK], [ROOT_BLOCK, ROOT_BLOCK, REGISTRY_BLOCK]],
+)
+def test_small_lock_root_count_fails(tmp_path: Path, blocks: list[str]) -> None:
+    with pytest.raises(ValueError, match="one editable project root"):
+        verify(small_lock(tmp_path, blocks))
+
+
+@pytest.mark.parametrize("inventory", ["package = []\n", "package = {}\n"])
+def test_empty_or_wrong_shape_inventory_fails(tmp_path: Path, inventory: str) -> None:
+    root = small_lock(tmp_path, [])
+    (root / "uv.lock").write_text("version = 1\n" + inventory)
+    with pytest.raises(ValueError, match="inventory"):
+        verify(root)

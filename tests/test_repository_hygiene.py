@@ -27,7 +27,7 @@ def test_clean_index_and_untracked_text(tmp_path: Path) -> None:
     root = repository(tmp_path)
     (root / "notes.md").write_text("Ignored or untracked text is still read.\n")
     assert git_paths(root) == ["README.md"]
-    assert sorted(disk_files(root, root)) == ["README.md", "notes.md"]
+    assert sorted(disk_files(root, root, top_level=True)) == ["README.md", "notes.md"]
     verify_repository(root)
 
 
@@ -50,18 +50,24 @@ def test_generated_roots_and_bytecode_caches_are_narrow(tmp_path: Path) -> None:
     (tmp_path / "src" / "__pycache__").mkdir(parents=True)
     (tmp_path / "src" / "__pycache__" / "module.pyc").write_bytes(b"\0")
     (tmp_path / "src" / "module.py").write_text("value = 1\n")
-    assert disk_files(tmp_path, tmp_path) == ["src/module.py"]
+    assert disk_files(tmp_path, tmp_path, top_level=True) == ["src/module.py"]
+
+
+def test_generated_name_nested_under_authored_tree_is_scanned(tmp_path: Path) -> None:
+    (tmp_path / "src" / ".venv").mkdir(parents=True)
+    (tmp_path / "src" / ".venv" / "notes.md").write_text("authored\n")
+    assert disk_files(tmp_path, tmp_path, top_level=True) == ["src/.venv/notes.md"]
 
 
 def test_authored_symlink_and_fifo_fail(tmp_path: Path) -> None:
     (tmp_path / "README.md").write_text("okay")
     (tmp_path / "link.md").symlink_to("README.md")
     with pytest.raises(ValueError, match="symlink"):
-        disk_files(tmp_path, tmp_path)
+        disk_files(tmp_path, tmp_path, top_level=True)
     (tmp_path / "link.md").unlink()
     os.mkfifo(tmp_path / "channel")
     with pytest.raises(ValueError, match="file kind"):
-        disk_files(tmp_path, tmp_path)
+        disk_files(tmp_path, tmp_path, top_level=True)
 
 
 @pytest.mark.parametrize("name", ["image.png", "script.sh", "README"])

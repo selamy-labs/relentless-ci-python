@@ -32,11 +32,11 @@ def git_paths(root: Path) -> list[str]:
     return data[:-1].decode("utf-8").split("\0")
 
 
-def disk_files(root: Path, directory: Path) -> list[str]:
+def disk_files(root: Path, directory: Path, *, top_level: bool) -> list[str]:
     """Include ignored authored text while omitting exact generated roots."""
     names: list[str] = []
     for path in directory.iterdir():
-        if directory == root and path.name in GENERATED_ENTRIES:
+        if top_level and path.name in GENERATED_ENTRIES:
             continue
         names.extend(walk_entry(root, path))
     return names
@@ -47,7 +47,11 @@ def walk_entry(root: Path, path: Path) -> list[str]:
     if path.is_symlink():
         raise ValueError(f"authored symlink is unsupported: {path}")
     if path.is_dir():
-        return [] if path.name == "__pycache__" else disk_files(root, path)
+        return (
+            []
+            if path.name == "__pycache__"
+            else disk_files(root, path, top_level=False)
+        )
     if path.is_file():
         return [path.relative_to(root).as_posix()]
     raise ValueError(f"unsupported authored file kind: {path}")
@@ -70,7 +74,7 @@ def verify_repository(root: Path) -> None:
     """Validate native index and filesystem contents from the same root."""
     indexed = git_paths(root)
     verify_path_names(indexed)
-    names = sorted(set(indexed + disk_files(root, root)))
+    names = sorted(set(indexed + disk_files(root, root, top_level=True)))
     verify_path_names(names)
     for name in names:
         verify_text_kind(name)

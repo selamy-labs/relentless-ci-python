@@ -41,7 +41,6 @@ def artifact(value: object) -> None:
     url = urlsplit(text(item.get("url")))
     if (
         url.scheme != "https"
-        or url.hostname != ARTIFACT_HOST
         or url.netloc != ARTIFACT_HOST
         or not url.path.startswith("/packages/")
         or not url.path.endswith((".whl", ".tar.gz"))
@@ -52,8 +51,16 @@ def artifact(value: object) -> None:
     if not SHA256.fullmatch(text(item.get("hash"))):
         raise ValueError("dependency artifact requires canonical SHA-256")
     size = item.get("size")
-    if type(size) is not int or size <= 0:
+    if not isinstance(size, int) or isinstance(size, bool) or size <= 0:
         raise ValueError("dependency artifact requires positive size")
+
+
+def verify_wheels(value: object) -> None:
+    """Validate every locked wheel, including wheels for other platforms."""
+    if not is_array(value):
+        raise ValueError("dependency wheels must be an array")
+    for wheel in value:
+        artifact(wheel)
 
 
 def package(item: dict[str, object], project: str) -> bool:
@@ -61,16 +68,14 @@ def package(item: dict[str, object], project: str) -> bool:
     name = text(item.get("name"))
     text(item.get("version"))
     source = record(item.get("source"))
-    if source == {"editable": "."} and name == project:
+    if source == {"editable": "."}:
+        if name != project:
+            raise ValueError("editable dependency must be the project root")
         return False
     if source != {"registry": REGISTRY}:
         raise ValueError("dependency source must use approved PyPI registry")
     artifact(item.get("sdist"))
-    wheels = item.get("wheels", [])
-    if not is_array(wheels):
-        raise ValueError("dependency wheels must be an array")
-    for wheel in wheels:
-        artifact(wheel)
+    verify_wheels(item.get("wheels", []))
     return True
 
 
@@ -80,9 +85,12 @@ def verify(root: Path) -> tuple[int, int]:
     name = text(record(project["project"])["name"])
     lock = record(tomllib.loads((root / "uv.lock").read_text()))
     packages = lock.get("package")
-    if not is_array(packages) or not packages:
+    if not is_array(packages):
+        raise ValueError("dependency lock inventory must be an array")
+    if not packages:
         raise ValueError("dependency lock inventory must be nonempty")
     registry_count = sum(package(record(item), name) for item in packages)
-    if registry_count != len(packages) - 1:
+    root_count = len(packages) - registry_count
+    if root_count < 1 or root_count > 1:
         raise ValueError("dependency lock requires one editable project root")
     return registry_count, len(packages)
