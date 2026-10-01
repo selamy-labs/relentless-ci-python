@@ -31,6 +31,29 @@ FORBIDDEN = {
     "pytest.mark.skipif",
     "pytest.mark.xfail",
 }
+APPROVED_CASTS = {
+    (
+        "quality/document_style.py",
+        "cast(Callable[..., str], formatter)",
+    ): "Pinned external formatter API",
+    (
+        "quality/mutation_config.py",
+        "cast(Callable[[object], str], module.serialize_config)",
+    ): "Pinned native serializer API",
+    (
+        "quality/mutation_coordinator.py",
+        "cast(Callable[..., None], module.cli)",
+    ): "Pinned native CLI API",
+    (
+        "quality/mutation_worker.py",
+        "cast(Handler, module.handle_mutate_and_test)",
+    ): "Pinned native worker API",
+    (
+        "quality/mutation_workspace.py",
+        "cast(BaseExceptionGroup[BaseException], error)",
+    ): "Runtime exception-group narrowing",
+    ("quality/runtime_data.py", "cast(YamlAPI, yaml)"): "Pinned YAML adapter API",
+}
 
 
 def module_aliases(node: ast.Import) -> dict[str, str]:
@@ -156,13 +179,37 @@ def api(node: ast.AST, names: dict[str, str]) -> str | None:
     return None
 
 
+def reject_any(node: ast.AST, names: dict[str, str], location: str) -> None:
+    """Reject statically named explicit Any, including import aliases."""
+    if isinstance(node, (ast.Name, ast.Attribute)) and symbol(node, names) in {
+        "typing.Any",
+        "typing_extensions.Any",
+    }:
+        raise ValueError(f"{location}: explicit Any is unsupported")
+
+
+def reject_unapproved_cast(
+    node: ast.AST, names: dict[str, str], path: Path, location: str
+) -> None:
+    """Bind each existing third-party cast to its reviewed source expression."""
+    if isinstance(node, ast.Call) and symbol(node.func, names) in {
+        "typing.cast",
+        "typing_extensions.cast",
+    }:
+        key = ("/".join(path.parts[-2:]), ast.unparse(node))
+        if key not in APPROVED_CASTS:
+            raise ValueError(f"{location}: unapproved type cast")
+
+
 def verify_node(node: ast.AST, names: dict[str, str], path: Path) -> None:
-    """Reject unfinished bodies and statically named forbidden APIs."""
+    """Reject unfinished bodies, debug APIs and type escape hatches."""
     location = f"{path}:{getattr(node, 'lineno', 0)}"
     if unfinished(node):
         raise ValueError(f"{location}: incomplete implementation")
     if api(node, names) in FORBIDDEN:
         raise ValueError(f"{location}: debug or disabled-test API")
+    reject_any(node, names, location)
+    reject_unapproved_cast(node, names, path, location)
 
 
 def verify_file(path: Path) -> None:

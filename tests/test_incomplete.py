@@ -199,6 +199,50 @@ def test_nested_never_imported_file_is_enrolled(tmp_path: Path) -> None:
         verify_incomplete(tmp_path)
 
 
+@pytest.mark.parametrize(
+    "source",
+    [
+        "from typing import Any\nvalue: Any = 1\n",
+        "import typing as t\nvalue: t.Any = 1\n",
+        "from typing import Any as Escape\nvalue: Escape = 1\n",
+    ],
+)
+def test_rejects_explicit_any(tmp_path: Path, source: str) -> None:
+    path = authored(tmp_path, "src/package/type_probe.py", source)
+    with pytest.raises(ValueError, match="explicit Any"):
+        verify_file(path)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "from typing import cast\nvalue = cast(int, 'unsafe')\n",
+        "import typing as t\nvalue = t.cast(int, 'unsafe')\n",
+        "from typing import cast as escape\nvalue = escape(int, 'unsafe')\n",
+    ],
+)
+def test_rejects_unapproved_cast(tmp_path: Path, source: str) -> None:
+    path = authored(tmp_path, "quality/cast_probe.py", source)
+    with pytest.raises(ValueError, match="unapproved type cast"):
+        verify_file(path)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "document_style.py",
+        "mutation_config.py",
+        "mutation_coordinator.py",
+        "mutation_worker.py",
+        "mutation_workspace.py",
+        "runtime_data.py",
+    ],
+)
+def test_reviewed_adapter_cast_remains_exact(name: str) -> None:
+    path = Path(__file__).resolve().parents[1] / "quality" / name
+    verify_file(path)
+
+
 def test_empty_inventory_fails(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="no authored Python"):
         verify_incomplete(tmp_path)

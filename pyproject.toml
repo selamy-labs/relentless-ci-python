@@ -67,6 +67,11 @@ show_missing = true
 
 [tool.mypy]
 strict = true
+disallow_any_explicit = true
+
+[[tool.mypy.overrides]]
+module = ["quality.mutation_coordinator", "quality.document_style"]
+disallow_any_explicit = false
 
 [tool.pyright]
 typeCheckingMode = "strict"
