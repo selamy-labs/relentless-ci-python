@@ -89,6 +89,7 @@ def test_complete_inventory_binds_each_component_and_project(tmp_path: Path) -> 
         ("version", 2, "unsupported component license policy version"),
         ("projectLicense", "BSD-3-Clause", "project license differs"),
         ("projectLicenseSha256", HASH, "project license notice differs"),
+        ("projectLicenseSha256", "0" * 64, "project license notice differs"),
         ("approvedExpressions", ["MIT", "Apache-2.0", "UNKNOWN"], "approved SPDX"),
     ],
 )
