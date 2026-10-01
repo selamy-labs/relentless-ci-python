@@ -37,14 +37,15 @@ def page_route(endpoint: str, page: int) -> str:
 
 def array_inventory(api: ReadAPI, endpoint: str) -> list[object]:
     result: list[object] = []
-    for page in page_numbers(1):
+    pages = page_numbers(1)
+    while True:
+        page = next(pages)
         if page > MAX_PAGES:
             raise PolicyFailure("native inventory exceeded complete collection budget")
         current = items(api(page_route(endpoint, page)))
         if not current:
             return result
         result.extend(current)
-    raise PolicyFailure("native inventory exceeded complete collection budget")
 
 
 def count(value: object) -> int:
@@ -67,7 +68,9 @@ def stable_count(previous: object, current: int) -> int:
 def object_inventory(api: ReadAPI, endpoint: str, key: str) -> tuple[int, list[object]]:
     result: list[object] = []
     total: int | None = None
-    for page in page_numbers(1):
+    pages = page_numbers(1)
+    while True:
+        page = next(pages)
         if page > MAX_PAGES:
             raise PolicyFailure("native inventory exceeded complete collection budget")
         current, values = object_page(api(page_route(endpoint, page)), key)
@@ -75,7 +78,6 @@ def object_inventory(api: ReadAPI, endpoint: str, key: str) -> tuple[int, list[o
         if not values:
             return complete_object_inventory(total, result)
         result.extend(values)
-    raise PolicyFailure("native inventory exceeded complete collection budget")
 
 
 def complete_object_inventory(
