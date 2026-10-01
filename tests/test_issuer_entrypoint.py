@@ -29,14 +29,12 @@ from tests.test_trusted_issuer import native_source as approved_source
 def native_source() -> dict[str, object]:
     return {
         ROOT: {"id": 17, "full_name": "owner/repo", "default_branch": "main"},
-        ROOT
-        + "/branches/main": {
+        ROOT + "/branches/main": {
             "name": "main",
             "protected": True,
             "commit": {"sha": BASE},
         },
-        ROOT
-        + "/actions/workflows/ci.yml": {
+        ROOT + "/actions/workflows/ci.yml": {
             "id": 23,
             "name": "Relentless CI",
             "path": ".github/workflows/ci.yml",
@@ -220,5 +218,62 @@ def test_module_entry_requires_one_protected_profile(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(sys, "argv", ["issuer_entrypoint.py"])
+    with pytest.raises(PolicyFailure, match="one protected template profile"):
+        runpy.run_module("quality.trusted_policy.issuer_main", run_name="__main__")
+
+
+@pytest.mark.parametrize(
+    "route,key,values",
+    [
+        (ROOT, "full_name", ["alpha/repo", "zulu/repo"]),
+        (ROOT + "/branches/main", "commit", [{"sha": "0" * 40}, {"sha": "f" * 40}]),
+        (ROOT + "/actions/workflows/ci.yml", "name", ["Alpha CI", "Zulu CI"]),
+        (
+            ROOT + "/actions/workflows/ci.yml",
+            "path",
+            [".github/workflows/a.yml", ".github/workflows/z.yml"],
+        ),
+    ],
+)
+def test_protected_metadata_rejects_both_ordered_mismatch_directions(
+    route: str, key: str, values: list[object]
+) -> None:
+    for alternate in values:
+        source = native_source()
+        changed = deepcopy(source[route])
+        assert isinstance(changed, dict)
+        changed[key] = alternate
+        source[route] = changed
+        with pytest.raises(PolicyFailure):
+            reviewed_policy(NativeAPI(source), "owner/repo", BASE, "python")
+
+
+def test_protected_flag_rejects_truthy_non_boolean() -> None:
+    source = native_source()
+    route = ROOT + "/branches/main"
+    branch = deepcopy(source[route])
+    assert isinstance(branch, dict)
+    branch["protected"] = 1
+    source[route] = branch
+    with pytest.raises(PolicyFailure):
+        reviewed_policy(NativeAPI(source), "owner/repo", BASE, "python")
+
+
+@pytest.mark.parametrize("size", [7 * 1024 * 1024 + 1, 8 * 1024 * 1024])
+def test_event_file_accepts_valid_json_at_large_boundary(
+    tmp_path: Path, size: int
+) -> None:
+    path = tmp_path / "bounded-event.json"
+    empty = json.dumps({"payload": ""}).encode()
+    body = json.dumps({"payload": "x" * (size - len(empty))}).encode()
+    assert len(body) == size
+    path.write_bytes(body)
+    assert event_payload(path) == {"payload": "x" * (size - len(empty))}
+
+
+def test_module_entry_rejects_extra_untrusted_profile_argument(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(sys, "argv", ["issuer_entrypoint.py", "python", "typescript"])
     with pytest.raises(PolicyFailure, match="one protected template profile"):
         runpy.run_module("quality.trusted_policy.issuer_main", run_name="__main__")

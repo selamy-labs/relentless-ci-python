@@ -46,11 +46,10 @@ def required_names(profile: str) -> frozenset[str]:
     if profile not in PROFILES:
         raise PolicyFailure("unknown protected template profile")
     label, versions = PROFILES[profile]
-    return frozenset(
-        full_names(label, versions)
-        | installed_names(label, versions)
-        | {"Relentless CI gate"}
-    )
+    names = full_names(label, versions)
+    names.update(installed_names(label, versions))
+    names.add("Relentless CI gate")
+    return frozenset(names)
 
 
 def reviewed_policy(
