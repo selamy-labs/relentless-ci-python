@@ -10,7 +10,7 @@ from quality.trusted_policy.issuer_resolution import (
     matching_run,
     resolve,
 )
-from quality.trusted_policy.review_policy import PolicyFailure
+from quality.trusted_policy.review_policy import PolicyFailure, record
 from quality.trusted_policy.trusted_event import Trigger
 
 ROOT = "repos/owner/repo"
@@ -243,8 +243,7 @@ def test_trigger_identity_rejects_lexical_and_numeric_mismatches(
 
 
 def test_matching_run_compares_values_not_object_identity() -> None:
-    candidate = source()[ROOT + "/pulls/2"]
-    assert isinstance(candidate, dict)
+    candidate = record(source()[ROOT + "/pulls/2"])
     native_run = run(91, HEAD.encode().decode())
     assert matching_run(native_run, reviewed(), candidate, 2, HEAD) == 91
     large = ReviewedPolicy(

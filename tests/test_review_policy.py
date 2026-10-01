@@ -227,14 +227,14 @@ def test_role_response_must_identify_exact_reviewer(user: dict[str, object]) -> 
 
 
 def test_role_identity_checks_both_lexical_directions() -> None:
-    reviewer = {"id": 2, "login": "user-2"}
+    reviewer: dict[str, object] = {"id": 2, "login": "user-2"}
     for user in ({"id": 1, "login": "user-2"}, {"id": 2, "login": "z-user"}):
         with pytest.raises(PolicyFailure, match="identity"):
             matching_role({"user": user, "role_name": "maintain"}, reviewer)
 
 
 def test_role_identity_compares_large_values_instead_of_objects() -> None:
-    reviewer = {"id": int("1000"), "login": "user-1000"}
+    reviewer: dict[str, object] = {"id": int("1000"), "login": "user-1000"}
     response = {
         "user": {"id": int("1000"), "login": "user-1000"},
         "role_name": "maintain",

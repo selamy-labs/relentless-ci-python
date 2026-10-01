@@ -6,7 +6,7 @@ from copy import deepcopy
 import pytest
 
 from quality.trusted_policy.fork_run import same_head, unique_pull
-from quality.trusted_policy.review_policy import PolicyFailure
+from quality.trusted_policy.review_policy import PolicyFailure, record
 from tests.test_metadata_collector import REPOSITORY, NativeAPI
 from tests.test_review_policy import BASE, HEAD
 
@@ -53,10 +53,8 @@ def test_unique_exact_fork_pr_is_resolved_from_complete_native_list() -> None:
 def test_equal_native_fork_values_can_be_distinct_objects() -> None:
     native = run()
     candidate = pull()
-    head = candidate["head"]
-    assert isinstance(head, dict)
-    repository = head["repo"]
-    assert isinstance(repository, dict)
+    head = record(candidate["head"])
+    repository = record(head["repo"])
     candidate["base"] = {"sha": BASE.encode().decode()}
     head["sha"] = HEAD.encode().decode()
     head["ref"] = b"feature".decode()
@@ -83,10 +81,8 @@ def test_fork_head_rejects_lexically_earlier_or_later_mismatches(
     field: str, value: object
 ) -> None:
     candidate = pull()
-    head = candidate["head"]
-    assert isinstance(head, dict)
-    repository = head["repo"]
-    assert isinstance(repository, dict)
+    head = record(candidate["head"])
+    repository = record(head["repo"])
     if field == "base":
         candidate["base"] = value
     elif field == "repository_id":

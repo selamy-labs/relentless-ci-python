@@ -11,15 +11,14 @@ from quality.trusted_policy.execution_policy import (
     require_matrix,
     verify_run,
 )
-from quality.trusted_policy.review_policy import PolicyFailure
+from quality.trusted_policy.review_policy import PolicyFailure, record
 
 HEAD = "a" * 40
 BASE = "b" * 40
 
 
 def mapping(value: object) -> dict[str, object]:
-    assert isinstance(value, dict)
-    return value
+    return record(value)
 
 
 NAMES = {
