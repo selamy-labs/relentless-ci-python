@@ -91,6 +91,6 @@ def verify(root: Path) -> tuple[int, int]:
         raise ValueError("dependency lock inventory must be nonempty")
     registry_count = sum(package(record(item), name) for item in packages)
     root_count = len(packages) - registry_count
-    if root_count < 1 or root_count > 1:
+    if root_count != 1:
         raise ValueError("dependency lock requires one editable project root")
     return registry_count, len(packages)
