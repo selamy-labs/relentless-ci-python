@@ -1,5 +1,6 @@
 """Platform-shaped clean and bypass cases for the preliminary approval decision."""
 
+import json
 from collections.abc import Sequence
 from datetime import datetime
 
@@ -245,7 +246,7 @@ def test_partial_or_absent_metadata_never_passes() -> None:
     with pytest.raises(PolicyFailure, match="complete"):
         decide(pull_request(), [review()], {2: role()}, False)
     with pytest.raises(PolicyFailure, match="complete"):
-        decide(pull_request(), [review()], {2: role()}, 1)  # type: ignore[arg-type]
+        decide(pull_request(), [review()], {2: role()}, json.loads("1"))
     with pytest.raises(PolicyFailure, match="missing"):
         decide(pull_request(), [], {})
     with pytest.raises(KeyError):

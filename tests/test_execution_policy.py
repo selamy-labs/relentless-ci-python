@@ -1,6 +1,6 @@
 """Missing, skipped, cancelled, forged and stale native execution cannot pass."""
 
-from typing import cast
+import json
 
 import pytest
 
@@ -19,7 +19,7 @@ BASE = "b" * 40
 
 def mapping(value: object) -> dict[str, object]:
     assert isinstance(value, dict)
-    return cast(dict[str, object], value)
+    return value
 
 
 NAMES = {
@@ -284,7 +284,7 @@ def test_native_job_count_must_equal_the_declared_matrix() -> None:
 
 def test_complete_flag_requires_literal_boolean_true() -> None:
     with pytest.raises(PolicyFailure, match="complete"):
-        require_matrix(workflow(), jobs(), 2, HEAD, NAMES, 3, cast(bool, 1))
+        require_matrix(workflow(), jobs(), 2, HEAD, NAMES, 3, json.loads("1"))
 
 
 def test_large_paginated_job_inventory_uses_numeric_value_equality() -> None:

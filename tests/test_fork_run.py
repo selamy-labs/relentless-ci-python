@@ -54,8 +54,9 @@ def test_equal_native_fork_values_can_be_distinct_objects() -> None:
     native = run()
     candidate = pull()
     head = candidate["head"]
-    repository = head["repo"]  # type: ignore[index]
-    assert isinstance(head, dict) and isinstance(repository, dict)
+    assert isinstance(head, dict)
+    repository = head["repo"]
+    assert isinstance(repository, dict)
     candidate["base"] = {"sha": BASE.encode().decode()}
     head["sha"] = HEAD.encode().decode()
     head["ref"] = b"feature".decode()

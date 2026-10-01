@@ -63,8 +63,9 @@ def test_negative_native_exit_is_failure(
 
 def test_native_api_binding_is_immutable() -> None:
     reader = GithubAPI(Path("/bin/true"), REPO)
+    field = "repository"
     with pytest.raises(FrozenInstanceError):
-        reader.repository = "attacker/repo"  # type: ignore[misc]
+        setattr(reader, field, "attacker/repo")
 
 
 def test_missing_native_cli_fails(tmp_path: Path) -> None:

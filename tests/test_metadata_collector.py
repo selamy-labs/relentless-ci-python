@@ -22,8 +22,9 @@ def policy() -> Policy:
 
 def test_reviewed_policy_is_immutable_during_native_evaluation() -> None:
     value = policy()
+    field = "head"
     with pytest.raises(FrozenInstanceError):
-        value.head = BASE  # type: ignore[misc]
+        setattr(value, field, BASE)
 
 
 class NativeAPI:

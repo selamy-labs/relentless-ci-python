@@ -90,8 +90,9 @@ def test_completed_run_keeps_event_id_for_subsequent_native_recheck() -> None:
 
 def test_reviewed_policy_is_immutable() -> None:
     value = reviewed()
+    field = "repository_id"
     with pytest.raises(FrozenInstanceError):
-        value.repository_id = 18  # type: ignore[misc]
+        setattr(value, field, 18)
 
 
 def test_equal_native_values_can_have_distinct_objects() -> None:

@@ -4,7 +4,6 @@ import subprocess
 import sys
 from dataclasses import FrozenInstanceError
 from pathlib import Path
-from typing import cast
 
 import pytest
 
@@ -118,10 +117,21 @@ def test_check_transport_has_exact_timeout(
     native_run = subprocess.run
 
     def tracked_run(
-        *args: object, **kwargs: object
+        command: list[str],
+        *,
+        input: bytes | None = None,
+        capture_output: bool = False,
+        timeout: int = 0,
+        check: bool = False,
     ) -> subprocess.CompletedProcess[bytes]:
-        assert kwargs["timeout"] == 30
-        return cast(subprocess.CompletedProcess[bytes], native_run(*args, **kwargs))  # type: ignore[call-overload]
+        assert timeout == 30
+        return native_run(
+            command,
+            input=input,
+            capture_output=capture_output,
+            timeout=timeout,
+            check=check,
+        )
 
     monkeypatch.setattr(subprocess, "run", tracked_run)
     assert GithubChecks(fake_cli(tmp_path, "normal"), target()).create(HEAD, True) == 77
@@ -175,7 +185,8 @@ def test_compiled_decision_rejects_class_that_compares_equal_to_bool() -> None:
             return other is not bool
 
     class FakeBool(metaclass=EqualBool):
-        pass
+        def __bool__(self) -> bool:
+            return True
 
     with pytest.raises(PolicyFailure):
         payload(target(), HEAD, FakeBool())
@@ -195,11 +206,13 @@ def test_context_compares_text_values_in_both_directions() -> None:
 
 def test_trusted_check_records_are_immutable() -> None:
     target = Target("owner/repo", 41)
+    app_field = "app_id"
     with pytest.raises(FrozenInstanceError):
-        target.app_id = 42  # type: ignore[misc]
+        setattr(target, app_field, 42)
     checks = GithubChecks(Path("/bin/true"), target)
+    target_field = "target"
     with pytest.raises(FrozenInstanceError):
-        checks.target = Target("other/repo", 41)  # type: ignore[misc]
+        setattr(checks, target_field, Target("other/repo", 41))
 
 
 def test_context_and_app_identity_are_fixed() -> None:
