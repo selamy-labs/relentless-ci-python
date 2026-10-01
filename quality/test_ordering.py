@@ -47,7 +47,7 @@ FAST_FIRST = (
 
 def priority(node: str) -> tuple[bool, int, str]:
     """Order the full collection by reviewed first-kill evidence and node ID."""
-    file = node.split("::", 1)[0]
+    file = node.partition("::")[0]
     late = file in NATIVE_RECEIPTS or node == CLEANUP_PROBE
     if file in FAST_FIRST:
         return late, FAST_FIRST.index(file), node
