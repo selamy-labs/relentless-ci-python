@@ -81,7 +81,7 @@ include = ["src", "tests", "quality"]
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP", "C90", "ASYNC"]
+select = ["E", "F", "I", "B", "UP", "C90", "ASYNC", "S110"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
