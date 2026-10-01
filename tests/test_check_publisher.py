@@ -147,6 +147,11 @@ def test_compiled_check_has_terminal_decision(passed: bool, conclusion: str) -> 
     assert output["title"] == (
         "Trusted policy qualified" if passed else "Trusted policy rejected"
     )
+    assert output["summary"] == (
+        "Native run, review, and protected policy evidence qualified."
+        if passed
+        else "Required trusted policy evidence is absent or invalid."
+    )
 
 
 @pytest.mark.parametrize("head,passed", [("b" * 39, True), (HEAD, 1), (HEAD, "yes")])
