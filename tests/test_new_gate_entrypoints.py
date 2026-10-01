@@ -18,6 +18,7 @@ import pytest
         ("document_style", "document_style", "verify_document_style"),
         ("readme_example", "readme_example", "verify_readme_example"),
         ("support_files", "support_files", "verify_support"),
+        ("repository_hygiene", "repository_hygiene", "verify_repository"),
     ],
 )
 def test_new_gate_entrypoint_dispatch(

@@ -50,6 +50,7 @@ the example library with your own application.
 ## Understand a failure
 
 - [Source enrollment and physical lines](docs/source-scope.md)
+- [Repository hygiene and conflict markers](docs/repository-hygiene.md)
 - [Mutation outcomes and completeness](docs/mutation.md)
 - [Secret, vulnerability and static security scans](docs/security.md)
 - [Workflow syntax, shell checks and security](docs/workflows.md)

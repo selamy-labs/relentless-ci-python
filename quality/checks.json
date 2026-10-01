@@ -50,6 +50,11 @@
     "quality.incomplete_main"
   ],
   [
+    "python",
+    "-m",
+    "quality.repository_hygiene_main"
+  ],
+  [
     "uv",
     "export",
     "--locked",
