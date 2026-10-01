@@ -35,6 +35,14 @@ def test_deleted_or_edited_rationale_during_evaluation_fails() -> None:
         evaluate_comment(NativeAPI(values), POLICY)
 
 
+def test_edited_rationale_during_evaluation_fails() -> None:
+    values = comment_source()
+    changed = {**comment(body=BODY + " Updated"), "issue_url": ISSUE}
+    values[COMMENTS] = [values[COMMENTS][0], [changed]]
+    with pytest.raises(PolicyFailure, match="comment inventory changed"):
+        evaluate_comment(NativeAPI(values), POLICY)
+
+
 def test_missing_comment_fails() -> None:
     values = comment_source()
     values[COMMENTS] = [[]]

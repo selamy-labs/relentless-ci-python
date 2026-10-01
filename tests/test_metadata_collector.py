@@ -1,6 +1,7 @@
 """Collector endpoint and race probes against an independent native-shaped API."""
 
 from copy import deepcopy
+from dataclasses import FrozenInstanceError
 
 import pytest
 
@@ -14,6 +15,11 @@ REPOSITORY = "repos/owner/repo"
 PR = REPOSITORY + "/pulls/1"
 RUN = REPOSITORY + "/actions/runs/1"
 POLICY = Policy("owner/repo", 1, HEAD, BASE, 2, 1, frozenset(NAMES))
+
+
+def test_reviewed_policy_is_immutable_during_native_evaluation() -> None:
+    with pytest.raises(FrozenInstanceError):
+        POLICY.head = BASE  # type: ignore[misc]
 
 
 class NativeAPI:
@@ -36,8 +42,9 @@ def source() -> dict[str, list[object]]:
         PR + "/reviews?per_page=100&page=2": [[]],
         REPOSITORY + "/collaborators/user-2/permission": [role()],
         RUN: [workflow()],
-        RUN
-        + "/attempts/3/jobs?per_page=100&page=1": [{"total_count": 3, "jobs": jobs()}],
+        RUN + "/attempts/3/jobs?per_page=100&page=1": [
+            {"total_count": 3, "jobs": jobs()}
+        ],
         RUN + "/attempts/3/jobs?per_page=100&page=2": [{"total_count": 3, "jobs": []}],
     }
 
