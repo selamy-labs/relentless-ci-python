@@ -75,7 +75,7 @@ def matching_run(
     pull: dict[str, object],
     number: int,
     head: str,
-) -> int | None:
+) -> int:
     run = record(value)
     if (
         not same_text(run["event"], "pull_request")
@@ -85,7 +85,7 @@ def matching_run(
         or identifier(run["workflow_id"]) != reviewed.workflow_id
         or not associated_run(run, pull, number, head, reviewed.base)
     ):
-        return None
+        return 0
     return identifier(run["id"])
 
 

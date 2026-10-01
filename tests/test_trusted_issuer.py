@@ -16,7 +16,11 @@ from tests.test_execution_policy import NAMES, workflow
 from tests.test_metadata_collector import PR, REPOSITORY, RUN, NativeAPI
 from tests.test_review_policy import BASE, HEAD, review
 
-REVIEWED = ReviewedPolicy("owner/repo", 17, BASE, 2, frozenset(NAMES))
+
+def reviewed() -> ReviewedPolicy:
+    return ReviewedPolicy("owner/repo", 17, BASE, 2, frozenset(NAMES))
+
+
 RUNS = REPOSITORY + "/actions/workflows/2/runs?per_page=100&page=1"
 
 
@@ -90,7 +94,8 @@ def fork_source() -> dict[str, list[object]]:
 def test_current_native_approval_publishes_success(name: str, event: object) -> None:
     publisher = Publisher()
     assert (
-        issue(NativeAPI(native_source()), publisher.create, name, event, REVIEWED) == 91
+        issue(NativeAPI(native_source()), publisher.create, name, event, reviewed())
+        == 91
     )
     assert publisher.decisions == [(HEAD, False), (HEAD, True)]
 
@@ -105,7 +110,7 @@ def test_reevaluation_after_review_dismissal_publishes_failure() -> None:
             publisher.create,
             "issue_comment",
             comment_event(),
-            REVIEWED,
+            reviewed(),
         )
         == 91
     )
@@ -122,7 +127,7 @@ def test_untrusted_event_cannot_trigger_publication() -> None:
             publisher.create,
             "issue_comment",
             event,
-            REVIEWED,
+            reviewed(),
         )
     assert publisher.decisions == []
 
@@ -140,7 +145,7 @@ def test_missing_native_run_replaces_stale_success_with_failure() -> None:
             publisher.create,
             "issue_comment",
             comment_event(),
-            REVIEWED,
+            reviewed(),
         )
         == 91
     )
@@ -161,7 +166,7 @@ def test_missing_run_publishes_failure_for_closed_pull_request() -> None:
             publisher.create,
             "issue_comment",
             comment_event(),
-            REVIEWED,
+            reviewed(),
         )
         == 91
     )
@@ -182,7 +187,7 @@ def test_missing_run_cannot_publish_when_base_identity_changed() -> None:
             publisher.create,
             "issue_comment",
             comment_event(),
-            REVIEWED,
+            reviewed(),
         )
     assert publisher.decisions == []
 
@@ -199,7 +204,7 @@ def test_native_run_failure_publishes_failure_check() -> None:
             publisher.create,
             "workflow_run",
             completed_event(),
-            REVIEWED,
+            reviewed(),
         )
         == 91
     )
@@ -217,7 +222,7 @@ def test_success_cannot_publish_when_initial_failure_check_fails() -> None:
             reject_failure,
             "issue_comment",
             comment_event(),
-            REVIEWED,
+            reviewed(),
         )
 
 
@@ -231,7 +236,7 @@ def test_composed_decision_uses_app_owned_native_check_readback(
     mode = "dual" if approved else "failure"
     checks = GithubChecks(fake_cli(tmp_path, mode), Target("owner/repo", 41))
     assert issue(
-        NativeAPI(values), checks.create, "issue_comment", comment_event(), REVIEWED
+        NativeAPI(values), checks.create, "issue_comment", comment_event(), reviewed()
     ) == (78 if approved else 77)
 
 
@@ -244,7 +249,9 @@ def test_empty_fork_association_recovers_unique_pr_and_issues_app_check(
     run["pull_requests"] = []
     checks = GithubChecks(fake_cli(tmp_path, "dual"), Target("owner/repo", 41))
     assert (
-        issue(NativeAPI(fork_source()), checks.create, "workflow_run", event, REVIEWED)
+        issue(
+            NativeAPI(fork_source()), checks.create, "workflow_run", event, reviewed()
+        )
         == 78
     )
 
@@ -261,5 +268,5 @@ def test_ambiguous_fork_association_never_publishes() -> None:
     first.append(duplicate)
     publisher = Publisher()
     with pytest.raises(PolicyFailure, match="exactly one"):
-        issue(NativeAPI(values), publisher.create, "workflow_run", event, REVIEWED)
+        issue(NativeAPI(values), publisher.create, "workflow_run", event, reviewed())
     assert publisher.decisions == []
