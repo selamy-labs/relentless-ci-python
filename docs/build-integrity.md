@@ -1,7 +1,8 @@
 # Locked build dependencies and archive scope
 
 The required local registry regenerates `quality/build-constraints.txt` from
-`uv.lock` and compares the fresh export byte for byte with the committed file.
+`uv.lock` and compares its LF-canonical bytes with the committed file. Git pins
+the committed file to LF on every platform, matching UV's export.
 Missing, empty or stale exports fail. The native build then uses that file with
 `uv build --build-constraints quality/build-constraints.txt --require-hashes`.
 Each build dependency has an exact version and the approved wheel and source

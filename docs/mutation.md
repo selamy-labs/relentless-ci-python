@@ -83,6 +83,11 @@ startup and mutation interactions are not modeled. The fixed rank and unknown
 file fallback are source-bound and tested. A fresh full local run and all four
 hosted Linux runtimes must prove the actual speed and strict kills.
 
+The separate protected-base bootstrap candidate also exceeded the former
+3,600-second pool bound after 3,800 of 3,951 native kills. Its failure
+archive was retained; the expanded deadline then passed all 3,951 local
+trials without changing source scope, operators, or kill classification.
+
 Run the same full local verifier described in the README. It requires no paid
 service or account credentials for mutation analysis. Hosted matrix enforcement
 requires a green run on the repaired published main revision.

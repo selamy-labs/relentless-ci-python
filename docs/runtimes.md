@@ -5,8 +5,9 @@ The template declares Python 3.11, 3.12, 3.13 and 3.14. The primary
 reviewed on 2026-09-29. Its canonical LF snapshot is in
 `quality/python-releases.json`; `quality/runtime-support.json` records its
 SHA-256 digest, approved branches and review window.
-Windows checkout CRLF is normalized to LF before digest comparison; all other
-bytes must match the reviewed snapshot.
+Git pins the snapshot checkout to LF on every platform. The runtime check also
+normalizes CRLF to LF before comparing the digest; all other bytes must match
+the reviewed snapshot.
 
 The [developer guide](https://devguide.python.org/versions/) at commit
 `d9adc4f23cfad7e9e366f4fec408bdea18f99cc2` lists upstream support. Its generator
