@@ -22,8 +22,14 @@ def reviewed() -> ReviewedPolicy:
     return ReviewedPolicy("owner/repo", 17, BASE, 23, frozenset({"full", "gate"}))
 
 
-COMMENT = Trigger("rationale", "owner/repo", 17, 2, None)
-COMPLETED = Trigger("completed_run", "owner/repo", 17, 2, 91)
+def comment() -> Trigger:
+    return Trigger("rationale", "owner/repo", 17, 2, None)
+
+
+def completed() -> Trigger:
+    return Trigger("completed_run", "owner/repo", 17, 2, 91)
+
+
 RUNS = ROOT + "/actions/workflows/23/runs?per_page=100&page=1"
 
 
@@ -75,7 +81,7 @@ def source() -> dict[str, object]:
 
 def test_rationale_resolves_latest_current_successful_native_run() -> None:
     api = NativeAPI(source())
-    policy = resolve(api, COMMENT, reviewed())
+    policy = resolve(api, comment(), reviewed())
     assert (policy.head, policy.base, policy.run_id, policy.required_names) == (
         HEAD,
         BASE,
@@ -87,7 +93,7 @@ def test_rationale_resolves_latest_current_successful_native_run() -> None:
 
 def test_completed_run_keeps_event_id_for_subsequent_native_recheck() -> None:
     api = NativeAPI(source())
-    assert resolve(api, COMPLETED, reviewed()).run_id == 91
+    assert resolve(api, completed(), reviewed()).run_id == 91
     assert RUNS not in api.routes
 
 
@@ -122,7 +128,7 @@ def test_repository_numeric_identity_rejects_both_directions(identifier: int) ->
     assert isinstance(repository, dict)
     repository["id"] = identifier
     with pytest.raises(PolicyFailure):
-        resolve(NativeAPI(values), COMMENT, reviewed())
+        resolve(NativeAPI(values), comment(), reviewed())
 
 
 def test_lexically_later_repository_name_is_not_reviewed_identity() -> None:
@@ -131,7 +137,7 @@ def test_lexically_later_repository_name_is_not_reviewed_identity() -> None:
     assert isinstance(repository, dict)
     repository["full_name"] = "z/repo"
     with pytest.raises(PolicyFailure):
-        resolve(NativeAPI(values), COMMENT, reviewed())
+        resolve(NativeAPI(values), comment(), reviewed())
 
 
 @pytest.mark.parametrize("field,value", [("id", 18), ("full_name", "other/repo")])
@@ -141,7 +147,7 @@ def test_repository_identity_must_match(field: str, value: object) -> None:
     assert isinstance(repository, dict)
     repository[field] = value
     with pytest.raises(PolicyFailure):
-        resolve(NativeAPI(values), COMMENT, reviewed())
+        resolve(NativeAPI(values), comment(), reviewed())
 
 
 @pytest.mark.parametrize(
@@ -154,7 +160,7 @@ def test_current_protected_main_is_required(field: str, value: object) -> None:
     assert isinstance(branch, dict)
     branch[field] = value
     with pytest.raises(PolicyFailure):
-        resolve(NativeAPI(values), COMMENT, reviewed())
+        resolve(NativeAPI(values), comment(), reviewed())
 
 
 def test_numeric_true_is_not_protected_branch_boolean() -> None:
@@ -163,7 +169,7 @@ def test_numeric_true_is_not_protected_branch_boolean() -> None:
     assert isinstance(branch, dict)
     branch["protected"] = 1
     with pytest.raises(PolicyFailure):
-        resolve(NativeAPI(values), COMMENT, reviewed())
+        resolve(NativeAPI(values), comment(), reviewed())
 
 
 @pytest.mark.parametrize("other_base", ["0" * 40, "c" * 40])
@@ -175,7 +181,7 @@ def test_changed_native_main_fails_in_both_lexical_directions(other_base: str) -
     branch["commit"] = {"sha": other_base}
     pull["base"] = {"sha": other_base}
     with pytest.raises(PolicyFailure, match="reviewed policy base"):
-        resolve(NativeAPI(values), COMMENT, reviewed())
+        resolve(NativeAPI(values), comment(), reviewed())
 
 
 def test_pr_base_must_equal_current_reviewed_main() -> None:
@@ -184,7 +190,7 @@ def test_pr_base_must_equal_current_reviewed_main() -> None:
     assert isinstance(pull, dict)
     pull["base"] = {"sha": HEAD}
     with pytest.raises(PolicyFailure):
-        resolve(NativeAPI(values), COMMENT, reviewed())
+        resolve(NativeAPI(values), comment(), reviewed())
 
 
 def test_lexically_later_pr_base_cannot_qualify() -> None:
@@ -193,7 +199,7 @@ def test_lexically_later_pr_base_cannot_qualify() -> None:
     assert isinstance(pull, dict)
     pull["base"] = {"sha": "c" * 40}
     with pytest.raises(PolicyFailure, match="candidate base"):
-        resolve(NativeAPI(values), COMMENT, reviewed())
+        resolve(NativeAPI(values), comment(), reviewed())
 
 
 @pytest.mark.parametrize(
@@ -217,7 +223,7 @@ def test_comment_cannot_use_unrelated_or_failed_run(change: dict[str, object]) -
     page = ROOT + "/actions/workflows/23/runs?per_page=100&page=2"
     values[page] = {"total_count": 1, "workflow_runs": []}
     with pytest.raises(PolicyFailure):
-        resolve(NativeAPI(values), COMMENT, reviewed())
+        resolve(NativeAPI(values), comment(), reviewed())
 
 
 def test_trigger_repository_and_matrix_cannot_be_supplied_by_pr() -> None:
@@ -225,7 +231,7 @@ def test_trigger_repository_and_matrix_cannot_be_supplied_by_pr() -> None:
     with pytest.raises(PolicyFailure):
         resolve(api, Trigger("rationale", "other/repo", 17, 2, None), reviewed())
     with pytest.raises(PolicyFailure):
-        resolve(api, COMMENT, ReviewedPolicy("owner/repo", 17, BASE, 23, frozenset()))
+        resolve(api, comment(), ReviewedPolicy("owner/repo", 17, BASE, 23, frozenset()))
 
 
 @pytest.mark.parametrize(
@@ -257,4 +263,4 @@ def test_incomplete_native_run_inventory_fails_closed() -> None:
     values = source()
     values[RUNS] = {"total_count": 3, "workflow_runs": [run(90), run(91)]}
     with pytest.raises(PolicyFailure):
-        resolve(NativeAPI(values), COMMENT, reviewed())
+        resolve(NativeAPI(values), comment(), reviewed())

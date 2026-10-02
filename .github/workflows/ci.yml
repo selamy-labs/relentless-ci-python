@@ -61,6 +61,7 @@ jobs:
             .quality-results/dependencies.json
             .quality-results/static-security.json
             .quality-results/workflows-security.json
+            .quality-results/duplication/
             .quality-results/mutation*.sqlite
             .quality-results/mutation-success-*/
             .quality-results/mutation-failure-*/
