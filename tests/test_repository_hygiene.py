@@ -81,10 +81,22 @@ def test_unknown_authored_file_types_fail(name: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "name", ["src/module.py", "README.md", "LICENSE", ".github/CODEOWNERS"]
+    "name",
+    ["src/module.py", "README.md", "LICENSE", ".github/CODEOWNERS", ".gitattributes"],
 )
 def test_enrolled_text_types_pass(name: str) -> None:
     verify_text_kind(name)
+
+
+def test_gitattributes_is_scanned_as_authored_text(tmp_path: Path) -> None:
+    root = repository(tmp_path)
+    attributes = root / ".gitattributes"
+    attributes.write_text("/quality/build-constraints.txt text eol=lf\n")
+    subprocess.run(["git", "add", ".gitattributes"], cwd=root, check=True)
+    verify_repository(root)
+    attributes.write_bytes(b"/quality/build-constraints.txt text eol=lf\0")
+    with pytest.raises(ValueError, match="binary data"):
+        verify_repository(root)
 
 
 @pytest.mark.parametrize(

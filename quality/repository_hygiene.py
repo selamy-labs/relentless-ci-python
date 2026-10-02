@@ -19,7 +19,7 @@ TEXT_SUFFIXES = {
     ".yaml",
     ".yml",
 }
-TEXT_NAMES = {".gitignore", ".github/CODEOWNERS", "LICENSE"}
+TEXT_NAMES = {".gitattributes", ".gitignore", ".github/CODEOWNERS", "LICENSE"}
 GENERATED_ENTRIES = {".coverage", *GENERATED_ROOTS}
 CONFLICT = re.compile(r"^(?:<{7,}|={7,}|>{7,}|\|{7,})(?:[ \t\r]|$)", re.MULTILINE)
 
