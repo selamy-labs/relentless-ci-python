@@ -45,8 +45,8 @@ collisions, missing/extra native inventory, import-path restoration, external
 provider normalization and both test/verifier production boundaries.
 
 Fix an edge or declare an actual runtime dependency; do not conceal it through
-ignore comments, a fake package mapping or policy changes. Trusted policy and
-suppression enforcement, hosted checks and the runtime matrix remain pending.
+ignore comments, a fake package mapping or policy changes. Every hosted full
+analysis job runs the graph gate, and the protected issuer checks policy changes.
 
 References: [Grimp API](https://grimp.readthedocs.io/en/stable/usage.html) and
 [deptry configuration](https://deptry.com/usage/).

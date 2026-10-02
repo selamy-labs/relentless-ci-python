@@ -56,7 +56,8 @@ Native Linux probes cover separate-session timeout/root-exit children, signed
 failures, interrupts with warnings treated as errors, and creator death. Actual
 Cosmic Ray timeout probes reap its separate trial session and retain the partial
 database as failure evidence. These establish lifecycle behavior, not a complete
-mutation pass. Native non-Linux lifecycle contracts remain pending.
+mutation pass. Full mutation runs on each declared Python version on Linux;
+installed behavior is checked separately on Linux, macOS and Windows.
 
 The full mutation command now initializes and baselines the unchanged native
 configuration, then starts up to eight isolated HTTP worker copies. Each worker

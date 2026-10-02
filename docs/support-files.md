@@ -25,6 +25,5 @@ both clean and defective shell behavior, missing tool, wrong version, malformed
 formats, stale receipt, hidden inventory, symlink and changed-input failures.
 
 Fix malformed or duplicate configuration, repair shell diagnostics, and rerun
-the common full command. The gate is still in an isolated candidate; complete
-mutation on every supported Python runtime, hosted matrices, independent
-protected-policy review and publication remain pending.
+the common full command. The hosted full-analysis matrix runs this gate on every
+declared Python version; protected policy changes require the App-owned check.

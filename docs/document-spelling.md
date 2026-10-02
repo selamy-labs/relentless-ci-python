@@ -8,5 +8,5 @@ Typos configuration or Git ignore rule cannot suppress a misspelling. Missing
 tools, wrong versions, malformed or incomplete native reports, stale or
 redirected receipts and source drift fail the check.
 
-This isolated candidate still needs full mutation and hosted runtime
-qualification before enrollment in the published template.
+The full hosted Linux analysis matrix runs this gate on every declared Python
+version.

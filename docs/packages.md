@@ -51,5 +51,5 @@ digest receipts, independently of the helper being tested.
 
 When replacing the example, update the protected public source inventory and
 consumer behavior together. Adding a module or package data cannot silently drop
-it from distribution checks. Multi-platform hosted verification is still pending
-in this implementation draft.
+it from distribution checks. Installed behavior runs on Linux, macOS and Windows
+for every declared Python version in the hosted matrix.

@@ -21,8 +21,8 @@ source archive included `.codegraph/codegraph.db` and `.complexipy_cache`.
 The allowlist removes these local artifacts. The wheel contains the library,
 CLI, type marker, license and generated distribution metadata.
 
-Automated archive-content validation, installed-consumer checks, reproducible
-build evidence and hosted runtime matrices remain pending. The native build
-and hash-export gates alone do not establish that those checks are complete.
+The separate package gate validates actual wheel and source archives, rebuilds
+the wheel byte for byte, and tests isolated installed consumers. The hosted
+matrix runs those gates across the declared runtimes and operating systems.
 
 Native command semantics: [UV build](https://docs.astral.sh/uv/reference/cli/#uv-build).

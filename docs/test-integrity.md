@@ -28,8 +28,9 @@ errors. Faulty fixtures live outside the checkout in temporary projects.
 Receipt probes separately exercise malformed fields, missing stages, summary
 mismatches, stale files and omitted source files.
 
-Custom collection conventions, retry overrides and hosted trusted-policy
-enforcement remain pending. The isolated incomplete-source gate now rejects
+The supported collection convention is `tests/test_*.py` and `*_test.py`.
+Custom conventions and retry overrides require reviewed scope changes. The
+incomplete-source gate rejects
 common static skip, debug, placeholder and suppression forms; see
 [incomplete-source.md](incomplete-source.md). Results alone do not establish
 assertion quality; independent behavioral properties, coverage and mutation

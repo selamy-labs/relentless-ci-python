@@ -13,7 +13,8 @@ The [developer guide](https://devguide.python.org/versions/) at commit
 uses the primary release-cycle API. The pinned guide identifies the review's
 source context; the saved API digest binds the actual dates used by this gate.
 A matching digest proves local consistency, not that a contributor's changed
-snapshot came from upstream. Trusted policy-change protection remains pending.
+snapshot came from upstream. Protected review and the App-owned issuer check
+guard changes to the snapshot.
 
 Run `python -m quality.runtime_support_main` in the locked development environment.
 The full local command and each installed-behavior job require this check.
@@ -53,10 +54,10 @@ type consumer can reject it, including on Python 3.11 through 3.13.
 
 The workflow requests full Linux analysis, coverage and every mutation for each
 branch, plus build/install/product behavior on Linux, macOS and Windows.
-A declared matrix is not proof that its jobs passed. Native local clean and
-negative probes qualify the runtime gate; its full coverage/mutation admission,
-current complete runtime/platform matrices and final hosted enforcement remain
-pending. Local Python 3.14.6 evidence for earlier slices remains revision-bound.
+A declared matrix is not proof that its jobs passed. Every publication candidate
+must pass full Linux analysis on Python 3.11–3.14 and installed behavior across
+Linux, macOS and Windows. Native run and raw artifact evidence must bind to the
+exact candidate revision.
 
 Before publication or a policy renewal, verify upstream support, review current
 patch releases and run the complete replacement matrix. This branch-support

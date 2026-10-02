@@ -3,9 +3,10 @@
 A framework-neutral starting point for a small typed library and JSON CLI,
 with strict quality checks that also test their executable verifiers.
 
-This is an implementation draft. Local gates are verified; public hosted CI,
-the runtime/platform matrix and live repository protections are still being
-completed. See individual gate documents for precise scope and limitations.
+The checked-in gates run locally and in the declared hosted matrix. Each
+generated repository must separately configure and read back protected-branch
+checks, code-owner review and a trusted App policy issuer before treating those
+results as enforced. See the gate documents for precise scope and limitations.
 
 ## Run the full local verifier
 
@@ -70,8 +71,9 @@ the example library with your own application.
 Fix the underlying defect and rerun the full command. Do not shrink source
 scope, lower thresholds, add broad suppressions, ignore unsuccessful mutants
 or substitute a faster profile for required verification. Changes to policy
-need explicit rationale and approval from trusted maintainer/platform state;
-that hosted enforcement is not yet installed in this draft.
+need explicit rationale and approval from trusted maintainer/platform state.
+The source repository's protected issuer must publish the dedicated App check;
+generated copies must configure and verify their own App and branch protection.
 
 ## Adapt the starting point
 
