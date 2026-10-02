@@ -1,6 +1,6 @@
 """Compute canonical unions without changing the caller's input."""
 
-from relentless_example.validation import intervals
+from interval_normalizer_generated_py.validation import intervals
 
 
 def append_interval(result: list[list[int]], start: int, end: int) -> None:

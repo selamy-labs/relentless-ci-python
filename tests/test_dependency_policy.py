@@ -82,7 +82,7 @@ def test_duplicate_editable_root_fails(tmp_path: Path) -> None:
     root = lock_root(tmp_path)
     with (root / "uv.lock").open("a") as output:
         output.write(
-            '\n[[package]]\nname = "relentless-ci-python"\n'
+            '\n[[package]]\nname = "interval-normalizer-generated-py"\n'
             'version = "0.1.0"\nsource = { editable = "." }\n'
         )
     with pytest.raises(ValueError, match="one editable project root"):

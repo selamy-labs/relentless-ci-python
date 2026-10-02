@@ -36,14 +36,14 @@ and merges overlapping or adjacent intervals without changing its input.
 
 ```sh
 mise --yes --locked exec -- uv build
-printf '[[5,8],[1,3],[2,6]]' | mise --yes --locked exec -- uv run --locked relentless-example
+printf '[[5,8],[1,3],[2,6]]' | mise --yes --locked exec -- uv run --locked interval-normalizer-generated-py
 ```
 
 Output is `[[1,8]]` followed by a newline. Valid input exits 0; malformed input
 writes a useful error to stderr and exits 2. Boolean, fractional and nonfinite
 endpoints are invalid. Integral JSON numeric values are accepted.
 
-Product code is in `src/relentless_example`. Tests include behavior/boundary examples,
+Product code is in `src/interval_normalizer_generated_py`. Tests include behavior/boundary examples,
 CLI streams and exit statuses, idempotence and permutation properties, and an
 independent bounded set-union model. Keep the verifier tests when replacing
 the example library with your own application.

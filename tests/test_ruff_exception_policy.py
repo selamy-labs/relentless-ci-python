@@ -13,7 +13,7 @@ COMMAND = [
     "ruff",
     "check",
     "--stdin-filename",
-    "src/relentless_example/exception_probe.py",
+    "src/interval_normalizer_generated_py/exception_probe.py",
     "-",
 ]
 

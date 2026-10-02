@@ -7,7 +7,11 @@ import sys
 from pathlib import Path
 
 from quality.trusted_policy.check_publisher import GithubChecks, Target
-from quality.trusted_policy.github_read import GithubAPI, decode_response
+from quality.trusted_policy.github_read import (
+    MAX_NATIVE_JSON_BYTES,
+    GithubAPI,
+    decode_response,
+)
 from quality.trusted_policy.issuer_resolution import ReviewedPolicy
 from quality.trusted_policy.metadata_collector import repository_route
 from quality.trusted_policy.metadata_pages import ReadAPI
@@ -98,7 +102,7 @@ def event_payload(path: Path) -> object:
     if (
         not path.is_absolute()
         or not path.is_file()
-        or path.stat().st_size > 8 * 1024 * 1024
+        or path.stat().st_size > MAX_NATIVE_JSON_BYTES
     ):
         raise PolicyFailure("trusted event file is missing or too large")
     return decode_response(path.read_bytes())

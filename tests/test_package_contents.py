@@ -32,7 +32,7 @@ INFO = "sample-1.0.0.dist-info/"
 
 
 def sources(root: Path) -> None:
-    directory = root / "src/relentless_example"
+    directory = root / "src/interval_normalizer_generated_py"
     directory.mkdir(parents=True)
     for name in (
         "__init__.py",
@@ -96,7 +96,7 @@ def test_complete_wheel_and_source_archives(tmp_path: Path) -> None:
     sdist = tmp_path / "package.tar.gz"
     write_sdist(sdist, sdist_values(tmp_path))
     verify_sdist(sdist, tmp_path, PROJECT)
-    cache = tmp_path / "src/relentless_example/__pycache__"
+    cache = tmp_path / "src/interval_normalizer_generated_py/__pycache__"
     cache.mkdir()
     (cache / "bytecode.pyc").write_bytes(b"generated")
     verify_wheel(wheel, tmp_path, PROJECT)
@@ -111,9 +111,9 @@ def test_wheel_defects_fail(tmp_path: Path, kind: str) -> None:
     if kind == "extra":
         files["hidden.txt"] = b"hidden"
     if kind == "missing":
-        del files["relentless_example/py.typed"]
+        del files["interval_normalizer_generated_py/py.typed"]
     if kind == "changed":
-        files["relentless_example/cli.py"] = b"changed"
+        files["interval_normalizer_generated_py/cli.py"] = b"changed"
     if kind == "record":
         files[INFO + "RECORD"] = b"wrong,,\n"
     if kind == "entry-point":
@@ -133,7 +133,7 @@ def test_source_defects_fail(tmp_path: Path, kind: str) -> None:
     if kind == "missing":
         del files["sample-1.0.0/README.md"]
     if kind == "changed":
-        files["sample-1.0.0/src/relentless_example/cli.py"] = b"changed"
+        files["sample-1.0.0/src/interval_normalizer_generated_py/cli.py"] = b"changed"
     path = tmp_path / "package.tar.gz"
     write_sdist(path, files)
     with pytest.raises(ValueError):

@@ -9,7 +9,7 @@ import pytest
 from hypothesis import example, given, seed, settings
 from hypothesis import strategies as st
 
-from relentless_example.cli import run
+from interval_normalizer_generated_py.cli import run
 
 TEXT = st.text(alphabet=string.ascii_letters + string.digits, max_size=64)
 INVALID = st.one_of(
@@ -45,7 +45,7 @@ def parser_rejects(text: str, message: str) -> None:
 def installed_rejects(text: str, message: str) -> None:
     assert len(text.encode("utf-8")) <= 512
     result = subprocess.run(
-        ["relentless-example"],
+        ["interval-normalizer-generated-py"],
         input=text,
         capture_output=True,
         text=True,

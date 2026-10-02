@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from relentless_example.cli import main, run
+from interval_normalizer_generated_py.cli import main, run
 
 
 @pytest.mark.parametrize(
@@ -37,7 +37,7 @@ def test_main_uses_standard_streams(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.mark.parametrize(("text", "code"), [("[[1,2]]", 0), ("null", 2)])
 def test_installed_console_script(text: str, code: int) -> None:
     result = subprocess.run(
-        ["relentless-example"],
+        ["interval-normalizer-generated-py"],
         input=text,
         capture_output=True,
         text=True,

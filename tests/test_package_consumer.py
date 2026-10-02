@@ -44,7 +44,7 @@ def test_isolated_consumer_commands_and_cleanup(
         if arguments[1:3] == ["-m", "mypy"]:
             assert (root / "consumer.py").read_text() == (
                 "from typing import assert_type\n"
-                "from relentless_example import normalize\n"
+                "from interval_normalizer_generated_py import normalize\n"
                 "assert_type(normalize([[0, 1]]), list[list[int]])\n"
             )
 
@@ -63,7 +63,7 @@ def test_isolated_consumer_commands_and_cleanup(
     cli = [
         str(
             package_consumer.executable(
-                root / "environment", "relentless-example", os.name
+                root / "environment", "interval-normalizer-generated-py", os.name
             )
         )
     ]

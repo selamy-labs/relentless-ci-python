@@ -36,7 +36,7 @@ def test_stage_copies_public_inputs_and_every_new_source(tmp_path: Path) -> None
     root.mkdir()
     repository(root)
     (root / ".gitignore").write_text("private patterns")
-    cache = root / "src/relentless_example/__pycache__"
+    cache = root / "src/interval_normalizer_generated_py/__pycache__"
     cache.mkdir()
     (cache / "bytecode.pyc").write_bytes(b"generated")
     (root / "src/new_module.py").write_text("new source")
@@ -44,7 +44,7 @@ def test_stage_copies_public_inputs_and_every_new_source(tmp_path: Path) -> None
     stage.mkdir()
     package_build.public_stage(root, stage)
     assert (stage / "src/new_module.py").read_text() == "new source"
-    assert not (stage / "src/relentless_example/__pycache__").exists()
+    assert not (stage / "src/interval_normalizer_generated_py/__pycache__").exists()
     assert not (stage / ".gitignore").exists()
     for name in ("README.md", "LICENSE", "pyproject.toml", "uv.lock"):
         assert (stage / name).read_bytes() == (root / name).read_bytes()

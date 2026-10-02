@@ -11,12 +11,12 @@ from quality.package_process import TIMEOUT, environment, expect, install_guard
 INPUT = "[[3,5],[0,2],[2,4],[8,10]]"
 OUTPUT = "[[0,5],[8,10]]\n"
 API_PROGRAM = (
-    "import json,sys; from relentless_example import normalize; "
+    "import json,sys; from interval_normalizer_generated_py import normalize; "
     "print(json.dumps(normalize(json.load(sys.stdin)),separators=(',',':')))"
 )
 TYPE_PROGRAM = (
     "from typing import assert_type\n"
-    "from relentless_example import normalize\n"
+    "from interval_normalizer_generated_py import normalize\n"
     "assert_type(normalize([[0, 1]]), list[list[int]])\n"
 )
 
@@ -67,7 +67,7 @@ def installed_consumer(wheel: Path) -> None:
             INPUT,
             (0, OUTPUT, ""),
         )
-        cli = [str(executable(virtual, "relentless-example", os.name))]
+        cli = [str(executable(virtual, "interval-normalizer-generated-py", os.name))]
         expect(cli, root, INPUT, (0, OUTPUT, ""))
         expect(cli, root, "{", (2, "", "error: invalid JSON\n"))
         expect(
