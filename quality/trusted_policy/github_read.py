@@ -9,6 +9,8 @@ from pathlib import Path
 from quality.trusted_policy.metadata_collector import repository_route
 from quality.trusted_policy.review_policy import PolicyFailure
 
+MAX_NATIVE_JSON_BYTES = 8 * 1024 * 1024
+
 
 def unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
     result: dict[str, object] = {}
@@ -42,7 +44,7 @@ def endpoint_path(endpoint: str, repository: str) -> str:
 
 
 def decode_response(value: bytes) -> object:
-    if len(value) > 8 * 1024 * 1024:
+    if len(value) > MAX_NATIVE_JSON_BYTES:
         raise PolicyFailure("native metadata response exceeded byte budget")
     result: object = json.loads(
         value.decode("utf-8"),
