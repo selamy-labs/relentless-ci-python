@@ -14,7 +14,10 @@ Opengrep uses six local rules, three applicable to Python: dynamic evaluation, u
 mise --yes --locked exec -- uv run --locked --group dev python -m quality.verify
 ```
 
-This selects a compatible Python through UV. Python 3.11–3.14 are the declared target runtimes. Only local macOS/Python 3.14 execution is currently verified; the hosted matrix and complete clean-clone/bootstrap tests remain pending. The remaining architecture, packaging, repository enforcement and other inventory gates are also still being implemented.
+This selects a compatible Python through UV. Python 3.11–3.14 are the declared
+target runtimes. Hosted full-analysis jobs run the same command independently
+for each version, and installed behavior runs on Linux, macOS and Windows. The
+separate App-owned check and native branch protection enforce policy changes.
 
 The language lock audit does not cover native analyzer binaries; their artifact hashes are pinned separately. Security tooling cannot prove absence of all vulnerabilities, and unreported upstream vulnerabilities are outside known-vulnerability scans.
 

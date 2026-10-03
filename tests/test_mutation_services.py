@@ -74,8 +74,12 @@ def test_launch_copies_inputs_and_binds_own_environment(
         [str(target / "src"), str(target)]
     )
     assert environment(target, inherited)["PYTHONDONTWRITEBYTECODE"] == "1"
-    assert environment(target, inherited)["PYTEST_DEBUG_TEMPROOT"] == str(target)
-    assert environment(tmp_path, inherited)["PYTEST_DEBUG_TEMPROOT"] == str(tmp_path)
+    assert environment(target, inherited)["PYTEST_DEBUG_TEMPROOT"] == str(
+        target / ".quality-results"
+    )
+    assert environment(tmp_path, inherited)["PYTEST_DEBUG_TEMPROOT"] == str(
+        tmp_path / ".quality-results"
+    )
 
 
 @pytest.mark.parametrize(
@@ -173,7 +177,7 @@ def test_all_stops_precede_waits_and_all_failures_are_retained(
             raise stop_error
 
     def finish(owned: OwnedCommand, timeout: float) -> None:
-        assert timeout == 39
+        assert timeout == 69
         events.append(("finish", owned.directory))
         if owned is workers[0].owned:
             raise finish_error

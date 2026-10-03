@@ -4,8 +4,12 @@ import os
 import shutil
 from pathlib import Path
 
-INPUTS = ("src", "tests", "quality")
+INPUTS = ("src", "tests", "quality", "docs", ".github")
 CONFIGURATION = (
+    ".gitignore",
+    "AGENTS.md",
+    "LICENSE",
+    "README.md",
     "pyproject.toml",
     "cosmic-ray.toml",
     "uv.lock",
@@ -48,5 +52,5 @@ def environment(root: Path, inherited: dict[str, str]) -> dict[str, str]:
     result = inherited.copy()
     result["PYTHONPATH"] = os.pathsep.join([str(root / "src"), str(root)])
     result["PYTHONDONTWRITEBYTECODE"] = "1"
-    result["PYTEST_DEBUG_TEMPROOT"] = str(root)
+    result["PYTEST_DEBUG_TEMPROOT"] = str(root / ".quality-results")
     return result

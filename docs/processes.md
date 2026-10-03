@@ -56,14 +56,15 @@ Native Linux probes cover separate-session timeout/root-exit children, signed
 failures, interrupts with warnings treated as errors, and creator death. Actual
 Cosmic Ray timeout probes reap its separate trial session and retain the partial
 database as failure evidence. These establish lifecycle behavior, not a complete
-mutation pass. Native non-Linux lifecycle contracts remain pending.
+mutation pass. Full mutation runs on each declared Python version on Linux;
+installed behavior is checked separately on Linux, macOS and Windows.
 
 The full mutation command now initializes and baselines the unchanged native
 configuration, then starts up to eight isolated HTTP worker copies. Each worker
 uses its own source and Python import path. The coordinator derives only the
 HTTP transport settings and reads them back independently; source scope,
-operators and test command remain unchanged. Complete execution uses a
-60-second trial bound and 21,240-second whole-pool deadline. Worker service
+operators and test command remain unchanged. Complete execution now uses a
+60-second native trial and a 21,240-second whole-pool deadline. Worker service
 lifetime and shutdown allowances bound startup and cleanup, and cannot turn a
 failed execution into a pass.
 
@@ -75,13 +76,15 @@ must match the complete native mutation plan exactly. Missing, duplicate or extr
 jobs and changed trial settings fail. A small native corpus qualifies the pool;
 complete product mutation remains required before claiming full verification.
 
-Collected tests are sorted deterministically by node identifier, with costly
-native pytest-receipt probes and the native descendant probe last. No case is
+Collected tests are sorted deterministically by reviewed first-killer file
+rank, then node identifier, with costly native pytest-receipt probes and the
+native descendant probe last. The rank uses 4,318 complete local first-killer
+records and hosted baseline timings; see `docs/mutation.md`. No case is
 filtered, renamed, retried or exempted. Native collector/completion inventories
 still have to match exactly. The ordering function remains in coverage and
 mutation scope. An independent probe kept all 490 prior completed identifiers
 and baseline success while reducing one workflow-defect failure from 7.33 to
-4.21 seconds. That earlier optimization did not relax the then-current
-30-second per-mutant or 3,600-second pool deadline, or use cached outcomes.
-The later bootstrap timeout failure and current bounds are recorded in
-`docs/mutation.md`.
+4.21 seconds. That optimization did not change the then-current 3600-second
+pool or 30-second trial deadlines, and did not use cached outcomes. The later
+hosted throughput review and current 21,240-second pool bound are documented in
+`docs/mutation.md`; the per-mutant bound is now 60 seconds.

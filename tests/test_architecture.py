@@ -11,7 +11,6 @@ from unittest.mock import patch
 import grimp
 import pytest
 
-import quality.architecture as architecture
 from quality.architecture import (
     declared_dependencies,
     module_name,
@@ -37,6 +36,18 @@ def repository(tmp_path: Path, source: str = "") -> Path:
     return tmp_path
 
 
+def deptry_result(root: Path) -> subprocess.CompletedProcess[str]:
+    """Run the native analyzer against a deliberately defective repository."""
+    return subprocess.run(
+        [sys.executable, "-m", "deptry", "src", "--exclude", "^$"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+
+
 @pytest.mark.parametrize(
     ("path", "name"),
     [
@@ -49,6 +60,12 @@ def repository(tmp_path: Path, source: str = "") -> Path:
 )
 def test_module_names(tmp_path: Path, path: str, name: str) -> None:
     assert module_name(tmp_path, tmp_path / path) == name
+
+
+def test_module_name_uses_path_value_with_a_fresh_string(tmp_path: Path) -> None:
+    source = bytearray(b"src").decode()
+    path = tmp_path / source / "example.py"
+    assert module_name(tmp_path, path) == "example"
 
 
 def test_module_inventory(tmp_path: Path) -> None:
@@ -223,18 +240,25 @@ def test_production_forbidden_edge(scope: str) -> None:
     verify_boundary(modules, "tooling", "app")
 
 
-def test_source_boundary_uses_value_equality(tmp_path: Path) -> None:
-    source = bytes.fromhex("737263").decode()
-    assert source == architecture.SOURCE_DIRECTORY
-    assert source is not architecture.SOURCE_DIRECTORY
-    modules = {"app": "src", "other": "src", "tooling": "quality"}
-    with patch.object(architecture, "SOURCE_DIRECTORY", source):
-        assert module_name(tmp_path, tmp_path / "src" / "app.py") == "app"
-        with pytest.raises(ValueError, match="production imports tooling"):
-            verify_boundary(modules, "app", "tooling")
-        verify_boundary(modules, "app", "other")
-        with pytest.raises(ValueError, match="undeclared runtime"):
-            verify_architecture(repository(tmp_path, "import pytest\n"))
+def test_boundary_uses_scope_values_with_fresh_strings() -> None:
+    source = bytearray(b"src").decode()
+    tooling = bytearray(b"quality").decode()
+    modules = {"app": source, "tooling": tooling}
+    with pytest.raises(ValueError, match="production imports tooling"):
+        verify_boundary(modules, "app", "tooling")
+
+
+def test_native_policy_classifies_fresh_source_scope(tmp_path: Path) -> None:
+    root = repository(tmp_path)
+    source = bytearray(b"src").decode()
+    graph = grimp.ImportGraph()
+    graph.add_module("app")
+    graph.add_module("pytest", is_squashed=True)
+    graph.add_import(importer="app", imported="pytest")
+    with patch("quality.architecture.owned_modules", return_value={"app": source}):
+        with patch("quality.architecture.native_graph", return_value=graph):
+            with pytest.raises(ValueError, match="undeclared runtime"):
+                verify_architecture(root)
 
 
 def test_edge_cycle_and_noncyclic_production() -> None:
@@ -287,14 +311,7 @@ def test_entry_point() -> None:
 )
 def test_real_deptry_production_defects(tmp_path: Path, source: str, rule: str) -> None:
     root = repository(tmp_path, source)
-    result = subprocess.run(
-        [sys.executable, "-m", "deptry", "src", "--exclude", "^$"],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        timeout=30,
-        check=False,
-    )
+    result = deptry_result(root)
     assert result.returncode == 1
     assert rule in result.stderr
 
@@ -307,14 +324,7 @@ def test_real_deptry_unused_runtime_dependency(tmp_path: Path) -> None:
             "[dependency-groups]", 'dependencies=["pytest"]\n[dependency-groups]'
         )
     )
-    result = subprocess.run(
-        [sys.executable, "-m", "deptry", "src", "--exclude", "^$"],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        timeout=30,
-        check=False,
-    )
+    result = deptry_result(root)
     assert result.returncode == 1
     assert "DEP002" in result.stderr
 
