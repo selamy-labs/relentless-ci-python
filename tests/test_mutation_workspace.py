@@ -1,6 +1,7 @@
 """Failure evidence survives deletion; unproven cleanup retains original ownership."""
 
 import json
+import os
 import shutil
 from pathlib import Path
 from unittest.mock import patch
@@ -22,6 +23,7 @@ def test_success_removes_only_its_own_temporary_workspace(tmp_path: Path) -> Non
     assert len(retained) == 1
     assert (retained[0] / "workspace/source.py").read_text() == "original"
     assert not (retained[0] / "failure.json").exists()
+    assert json.loads((retained[0] / "skipped-special-entries.json").read_text()) == []
 
 
 def test_success_retains_distinct_complete_native_evidence_for_each_run(
@@ -100,6 +102,7 @@ def test_failure_preserves_database_sidecars_and_mutated_inputs_before_cleanup(
         "message": str(error),
         "originalWorkspace": str(target),
         "cleanupUnproven": unproven,
+        "skippedSpecialEntries": [],
         "completeMutationPass": False,
     }
     assert target.exists() is unproven
@@ -120,6 +123,64 @@ def test_nested_cleanup_failures_remain_unproven(tmp_path: Path) -> None:
         cleanup_unproven(ExceptionGroup("nested", [ExceptionGroup("inner", [failure])]))
         is True
     )
+
+
+@pytest.mark.parametrize("fails", [False, True])
+def test_workspace_archive_preserves_recursive_fixture_symlink(
+    tmp_path: Path, fails: bool
+) -> None:
+    target: Path | None = None
+    if fails:
+        with pytest.raises(RuntimeError, match="trial failed"):
+            with workspace(tmp_path) as target:
+                (target / "fixture").mkdir()
+                (target / "fixture/again").symlink_to(".", target_is_directory=True)
+                (target / "mutation.sqlite").write_bytes(b"raw results")
+                raise RuntimeError("trial failed")
+    else:
+        with workspace(tmp_path) as target:
+            (target / "fixture").mkdir()
+            (target / "fixture/again").symlink_to(".", target_is_directory=True)
+            (target / "mutation.sqlite").write_bytes(b"raw results")
+    assert target is not None
+    assert not target.exists()
+    prefix = "mutation-failure-*" if fails else "mutation-success-*"
+    (archive,) = (tmp_path / ".quality-results").glob(prefix)
+    copied = archive / "workspace"
+    assert (copied / "fixture/again").is_symlink()
+    assert (copied / "fixture/again").readlink() == Path(".")
+    assert (copied / "mutation.sqlite").read_bytes() == b"raw results"
+
+
+@pytest.mark.parametrize("fails", [False, True])
+def test_special_test_fifo_is_recorded_without_losing_raw_database(
+    tmp_path: Path, fails: bool
+) -> None:
+    if fails:
+        with pytest.raises(RuntimeError, match="trial failed"):
+            with workspace(tmp_path) as target:
+                (target / "mutation.sqlite").write_bytes(b"raw results")
+                os.mkfifo(target / "channel")
+                (target / "nested").mkdir()
+                os.mkfifo(target / "nested/channel")
+                raise RuntimeError("trial failed")
+    else:
+        with workspace(tmp_path) as target:
+            (target / "mutation.sqlite").write_bytes(b"raw results")
+            os.mkfifo(target / "channel")
+            (target / "nested").mkdir()
+            os.mkfifo(target / "nested/channel")
+    prefix = "mutation-failure-*" if fails else "mutation-success-*"
+    (archive,) = (tmp_path / ".quality-results").glob(prefix)
+    assert (archive / "workspace/mutation.sqlite").read_bytes() == b"raw results"
+    assert not (archive / "workspace/channel").exists()
+    assert not (archive / "workspace/nested/channel").exists()
+    if fails:
+        detail = json.loads((archive / "failure.json").read_text())
+        assert detail["skippedSpecialEntries"] == ["channel", "nested/channel"]
+    else:
+        names = json.loads((archive / "skipped-special-entries.json").read_text())
+        assert names == ["channel", "nested/channel"]
 
 
 def test_failed_archive_retains_original_evidence(tmp_path: Path) -> None:

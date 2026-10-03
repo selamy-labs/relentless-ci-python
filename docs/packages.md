@@ -32,7 +32,13 @@ registered console script must produce exact stdout, stderr and exit statuses fo
 valid input, malformed JSON and out-of-bounds endpoints. Strict mypy checks an
 external consumer using `assert_type`, so missing typing metadata or an `Any`
 return cannot satisfy the declared public type. Import-path overrides are removed,
-user-site imports are disabled and warnings fail consumer processes.
+user-site imports are disabled and warnings fail consumer processes. Consumer
+behavior receives an allowlisted platform environment with home and temporary
+paths bound to its owned directory, so caller credentials do not reach installed
+code. A temporary `sitecustomize.py` denies Python sockets, child processes and
+writes outside that directory. Native probes attempt network, subprocess and
+outside-write operations and require the denial. The owned environment and guard
+are removed on every outcome.
 
 The source archive is rebuilt using the same hash constraints. Its wheel must
 match the original wheel byte for byte and pass a second isolated installation.
@@ -45,5 +51,5 @@ digest receipts, independently of the helper being tested.
 
 When replacing the example, update the protected public source inventory and
 consumer behavior together. Adding a module or package data cannot silently drop
-it from distribution checks. Multi-platform hosted verification is still pending
-in this implementation draft.
+it from distribution checks. Installed behavior runs on Linux, macOS and Windows
+for every declared Python version in the hosted matrix.

@@ -21,8 +21,7 @@ checked-in registry; no separate local/CI definitions exist.
 
 Deptry additionally checks missing, transitive, development-only and unused
 runtime dependencies. Its production command is `deptry src`. Its second
-command is `deptry src tests quality --non-dev-dependency-groups dev --ignore
-DEP002`: development tools are available to tests/verifiers, and unused-package
+command is `deptry src tests quality --non-dev-dependency-groups dev --ignore DEP002`: development tools are available to tests/verifiers, and unused-package
 reporting is disabled for that second scan because many declared developer
 tools are CLI entry points. Unused production dependencies remain errors in
 the first scan. This does not allow production development imports: both the
@@ -46,8 +45,8 @@ collisions, missing/extra native inventory, import-path restoration, external
 provider normalization and both test/verifier production boundaries.
 
 Fix an edge or declare an actual runtime dependency; do not conceal it through
-ignore comments, a fake package mapping or policy changes. Trusted policy and
-suppression enforcement, hosted checks and the runtime matrix remain pending.
+ignore comments, a fake package mapping or policy changes. Every hosted full
+analysis job runs the graph gate, and the protected issuer checks policy changes.
 
 References: [Grimp API](https://grimp.readthedocs.io/en/stable/usage.html) and
 [deptry configuration](https://deptry.com/usage/).

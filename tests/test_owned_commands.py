@@ -13,6 +13,13 @@ from quality.owned_commands import SupervisionUnproven, run_owned, wait_supervis
 from quality.owned_process import Cleanup, Completion
 
 
+def finished_process() -> MagicMock:
+    """A supervisor that exited successfully and has no live child."""
+    return MagicMock(
+        pid=123, wait=MagicMock(return_value=0), poll=MagicMock(return_value=0)
+    )
+
+
 @pytest.mark.parametrize("retry", [False, True])
 def test_wait_preserves_tool_deadline_and_gracefully_bounds_cleanup(
     tmp_path: Path, retry: bool
@@ -120,9 +127,7 @@ def test_fresh_requests_bind_cwd_env_command_and_independent_receipts(
 def test_missing_or_corrupt_receipt_is_unproven_cleanup(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fault: Exception
 ) -> None:
-    process = MagicMock(
-        pid=123, wait=MagicMock(return_value=0), poll=MagicMock(return_value=0)
-    )
+    process = finished_process()
     monkeypatch.setattr(subprocess, "Popen", MagicMock(return_value=process))
     monkeypatch.setattr(owned_commands, "read_completion", MagicMock(side_effect=fault))
     with pytest.raises(SupervisionUnproven, match="receipt is incomplete") as error:
@@ -134,9 +139,7 @@ def test_missing_or_corrupt_receipt_is_unproven_cleanup(
 def test_valid_receipt_tool_failure_keeps_actual_status_and_raw_metadata(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    process = MagicMock(
-        pid=123, wait=MagicMock(return_value=0), poll=MagicMock(return_value=0)
-    )
+    process = finished_process()
     monkeypatch.setattr(subprocess, "Popen", MagicMock(return_value=process))
     monkeypatch.setattr(
         owned_commands,

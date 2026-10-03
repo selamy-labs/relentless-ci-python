@@ -20,11 +20,33 @@ def cleanup_unproven(error: BaseException) -> bool:
     return False
 
 
+def special_artifact(path: Path) -> bool:
+    """FIFOs and sockets have no copyable byte contents."""
+    return not (path.is_symlink() or path.is_file() or path.is_dir())
+
+
+def copy_workspace(source: Path, destination: Path) -> list[str]:
+    """Copy raw evidence and record special test artifacts that lack contents."""
+    skipped: list[str] = []
+
+    def unsupported(directory: str, names: list[str]) -> list[str]:
+        excluded: list[str] = []
+        for name in names:
+            path = Path(directory) / name
+            if special_artifact(path):
+                excluded.append(name)
+                skipped.append(path.relative_to(source).as_posix())
+        return excluded
+
+    shutil.copytree(source, destination, symlinks=True, ignore=unsupported)
+    return sorted(skipped)
+
+
 def preserve_failure(root: Path, target: Path, error: BaseException) -> None:
     output = root / ".quality-results"
     output.mkdir(exist_ok=True)
     retained = Path(mkdtemp(prefix="mutation-failure-", dir=output))
-    shutil.copytree(target, retained / "workspace")
+    skipped = copy_workspace(target, retained / "workspace")
     (retained / "failure.json").write_text(
         json.dumps(
             {
@@ -32,6 +54,7 @@ def preserve_failure(root: Path, target: Path, error: BaseException) -> None:
                 "message": str(error),
                 "originalWorkspace": str(target),
                 "cleanupUnproven": cleanup_unproven(error),
+                "skippedSpecialEntries": skipped,
                 "completeMutationPass": False,
             }
         ),
@@ -51,7 +74,8 @@ def preserve_success(root: Path, target: Path) -> None:
     output = root / ".quality-results"
     output.mkdir(exist_ok=True)
     retained = Path(mkdtemp(prefix="mutation-success-", dir=output))
-    shutil.copytree(target, retained / "workspace")
+    skipped = copy_workspace(target, retained / "workspace")
+    (retained / "skipped-special-entries.json").write_text(json.dumps(skipped))
 
 
 @contextmanager

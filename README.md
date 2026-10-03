@@ -3,9 +3,10 @@
 A framework-neutral starting point for a small typed library and JSON CLI,
 with strict quality checks that also test their executable verifiers.
 
-This is an implementation draft. Local gates are verified; public hosted CI,
-the runtime/platform matrix and live repository protections are still being
-completed. See individual gate documents for precise scope and limitations.
+The checked-in gates run locally and in the declared hosted matrix. Each
+generated repository must separately configure and read back protected-branch
+checks, code-owner review and a trusted App policy issuer before treating those
+results as enforced. See the gate documents for precise scope and limitations.
 
 ## Run the full local verifier
 
@@ -50,19 +51,29 @@ the example library with your own application.
 ## Understand a failure
 
 - [Source enrollment and physical lines](docs/source-scope.md)
+- [Repository hygiene and conflict markers](docs/repository-hygiene.md)
 - [Mutation outcomes and completeness](docs/mutation.md)
 - [Secret, vulnerability and static security scans](docs/security.md)
 - [Workflow syntax, shell checks and security](docs/workflows.md)
 - [Reviewed runtime support and required matrices](docs/runtimes.md)
 - [Dependency and architecture boundaries](docs/architecture.md)
+- [Support-file syntax and conditional shell checks](docs/support-files.md)
+- [README example execution](docs/readme-example.md)
+- [Local documentation links](docs/document-links.md)
+- [Native documentation spelling](docs/document-spelling.md)
+- [Markdown style](docs/document-style.md)
+- [Bounded CLI fuzzing](docs/bounded-fuzz.md)
+- [Incomplete and disabled source](docs/incomplete-source.md)
+- [Native duplication detection](docs/duplication.md)
 - [Public archives and installed consumers](docs/packages.md)
 - [Policy inspirations and chosen thresholds](docs/policy-provenance.md)
 
 Fix the underlying defect and rerun the full command. Do not shrink source
 scope, lower thresholds, add broad suppressions, ignore unsuccessful mutants
 or substitute a faster profile for required verification. Changes to policy
-need explicit rationale and approval from trusted maintainer/platform state;
-that hosted enforcement is not yet installed in this draft.
+need explicit rationale and approval from trusted maintainer/platform state.
+The source repository's protected issuer must publish the dedicated App check;
+generated copies must configure and verify their own App and branch protection.
 
 ## Adapt the starting point
 

@@ -74,6 +74,25 @@ def test_clean_review_and_declared_matrices(tmp_path: Path) -> None:
     verify_runtimes(tmp_path, date(2026, 12, 27))
 
 
+def test_windows_checkout_line_endings_preserve_reviewed_snapshot(
+    tmp_path: Path,
+) -> None:
+    approved = repository(tmp_path)
+    path = tmp_path / "quality" / "python-releases.json"
+    canonical = (json.dumps(json.loads(path.read_text()), indent=2) + "\n").encode()
+    approved["snapshotSha256"] = hashlib.sha256(canonical).hexdigest()
+    write_policy(tmp_path, approved)
+    path.write_bytes(canonical.replace(b"\n", b"\r\n"))
+
+    verify_runtimes(tmp_path, TODAY)
+    assert b'"security"' in canonical
+    path.write_bytes(
+        canonical.replace(b'"security"', b'"prerelease"', 1).replace(b"\n", b"\r\n")
+    )
+    with pytest.raises(ValueError, match="digest"):
+        verify_runtimes(tmp_path, TODAY)
+
+
 @pytest.mark.parametrize(
     "today", [date(2026, 9, 28), date(2026, 12, 28), date(2026, 12, 29)]
 )

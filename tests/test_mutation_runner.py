@@ -42,7 +42,15 @@ def repository(root: Path) -> None:
         (root / directory / "sample.py").write_text("value = 1\n")
     (root / "src" / "__pycache__").mkdir()
     (root / "src" / "__pycache__" / "junk").write_text("cache")
+    (root / "docs").mkdir()
+    (root / "docs" / "intro.md").write_text("# Introduction\n")
+    (root / ".github" / "workflows").mkdir(parents=True)
+    (root / ".github" / "workflows" / "ci.yml").write_text("name: CI\n")
     for name in (
+        ".gitignore",
+        "AGENTS.md",
+        "LICENSE",
+        "README.md",
         "pyproject.toml",
         "cosmic-ray.toml",
         "uv.lock",
@@ -82,7 +90,7 @@ def test_mutates_an_isolated_copy_with_fresh_baseline(
         assert timeout == (7 if arguments[1] == "exec" else 5)
         assert env["PYTHONPATH"] == os.pathsep.join([str(target / "src"), str(target)])
         assert env["PYTHONDONTWRITEBYTECODE"] == "1"
-        assert env["PYTEST_DEBUG_TEMPROOT"] == str(target)
+        assert env["PYTEST_DEBUG_TEMPROOT"] == str(target / ".quality-results")
         assert mutation.snapshot(target) == mutation.snapshot(tmp_path)
         assert not (target / "src" / "__pycache__").exists()
         received.append(arguments)
@@ -109,6 +117,8 @@ def change_input(root: Path, target: Path, changed: str) -> None:
         path = directory / "cosmic-ray.toml"
     if changed.endswith("timeout"):
         path = directory / "quality" / "mutation-timeout.json"
+    if changed.endswith("readme"):
+        path = directory / "README.md"
     path.write_text("changed\n")
 
 
@@ -121,6 +131,8 @@ def change_input(root: Path, target: Path, changed: str) -> None:
         "original-policy",
         "copy-timeout",
         "original-timeout",
+        "copy-readme",
+        "original-readme",
     ],
 )
 def test_rejects_changed_inputs(
@@ -168,4 +180,7 @@ def test_snapshot_includes_never_imported_code_and_policy(tmp_path: Path) -> Non
     assert files["cosmic-ray.toml"] == b"# configuration\n"
     assert files["quality/security.yml"] == b"rules: []"
     assert files["quality/mutation-timeout.json"] == b"7"
-    assert len(files) == 13
+    assert files["README.md"] == b"# configuration\n"
+    assert files["docs/intro.md"] == b"# Introduction\n"
+    assert files[".github/workflows/ci.yml"] == b"name: CI\n"
+    assert len(files) == 19

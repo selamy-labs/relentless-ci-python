@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from quality.commands import run
-from quality.package_process import TIMEOUT, environment, expect
+from quality.package_process import TIMEOUT, environment, expect, install_guard
 
 INPUT = "[[3,5],[0,2],[2,4],[8,10]]"
 OUTPUT = "[[0,5],[8,10]]\n"
@@ -60,6 +60,7 @@ def installed_consumer(wheel: Path) -> None:
             TIMEOUT,
             env,
         )
+        install_guard(virtual)
         expect(
             [str(python), "-I", "-W", "error", "-c", API_PROGRAM],
             root,

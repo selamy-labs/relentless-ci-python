@@ -112,7 +112,7 @@ def capture_stop(worker: Worker, errors: list[BaseException]) -> None:
 
 def capture_finish(worker: Worker, errors: list[BaseException]) -> None:
     try:
-        # Thirty seconds for an existing native trial; twenty for owned cleanup.
-        finish_owned(worker.owned, 39)
+        # Allow an existing sixty-second native trial to finish before cleanup.
+        finish_owned(worker.owned, 69)
     except BaseException as error:
         errors.append(error)
