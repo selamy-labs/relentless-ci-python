@@ -1,7 +1,9 @@
 """Require complete mutation records and actual pytest failures."""
 
 import re
+import shutil
 import sqlite3
+import tempfile
 from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
@@ -64,14 +66,17 @@ def text(value: object) -> str:
 
 
 def verify_session(path: Path) -> int:
-    """Open existing results read-only, so a missing report cannot create one."""
-    with closing(sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True)) as db:
-        planned_rows: list[tuple[object, ...]] = db.execute(
-            "SELECT job_id FROM work_items"
-        ).fetchall()
-        result_rows: list[tuple[object, ...]] = db.execute(
-            "SELECT job_id, worker_outcome, test_outcome, output FROM work_results"
-        ).fetchall()
+    """Read a private report copy without opening the original for writes."""
+    with tempfile.TemporaryDirectory() as directory:
+        copy = Path(directory) / "mutation.sqlite"
+        shutil.copyfile(path, copy)
+        with closing(sqlite3.connect(copy)) as db:
+            planned_rows: list[tuple[object, ...]] = db.execute(
+                "SELECT job_id FROM work_items"
+            ).fetchall()
+            result_rows: list[tuple[object, ...]] = db.execute(
+                "SELECT job_id, worker_outcome, test_outcome, output FROM work_results"
+            ).fetchall()
     planned = [text(job_id) for (job_id,) in planned_rows]
     results = [Result(*(text(value) for value in row)) for row in result_rows]
     return verify_results(planned, results)

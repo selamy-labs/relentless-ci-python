@@ -36,7 +36,8 @@ def snapshot(root: Path, approved: dict[str, object]) -> dict[str, object]:
     if approved["releaseCycleSource"] != RELEASE_SOURCE:
         raise ValueError("runtime release-cycle source must be the primary PEP API")
     path = root / "quality" / "python-releases.json"
-    if hashlib.sha256(path.read_bytes()).hexdigest() != approved["snapshotSha256"]:
+    snapshot_bytes = path.read_bytes().replace(b"\r\n", b"\n")
+    if hashlib.sha256(snapshot_bytes).hexdigest() != approved["snapshotSha256"]:
         raise ValueError("runtime upstream snapshot digest differs from review")
     return record(read_json(path))
 

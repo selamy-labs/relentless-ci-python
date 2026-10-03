@@ -20,6 +20,14 @@ def test_fresh_native_bytes_match_without_coercion(tmp_path: Path) -> None:
     build_constraints.verify_build_constraints(tmp_path)
 
 
+@pytest.mark.parametrize("expected,actual", [(b"b\n", b"b\r\n"), (b"b\r\n", b"b\n")])
+def test_fresh_export_allows_windows_line_endings(
+    tmp_path: Path, expected: bytes, actual: bytes
+) -> None:
+    files(tmp_path, expected, actual)
+    build_constraints.verify_build_constraints(tmp_path)
+
+
 @pytest.mark.parametrize("actual", [b"a\n", b"c\n", b"b", b""])
 def test_stale_or_altered_export_fails(tmp_path: Path, actual: bytes) -> None:
     files(tmp_path, b"b\n", actual)

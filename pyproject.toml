@@ -46,6 +46,9 @@ dev = [
     "hatchling==1.32.4",
     "pyyaml==6.0.3",
     "types-pyyaml>=6.0.12.20260906",
+    "markdown-it-py==4.2.0",
+    "mdformat==1.0.0",
+    "mdformat-gfm==1.0.0",
 ]
 
 [tool.pytest.ini_options]
@@ -64,6 +67,11 @@ show_missing = true
 
 [tool.mypy]
 strict = true
+disallow_any_explicit = true
+
+[[tool.mypy.overrides]]
+module = ["quality.mutation_coordinator", "quality.document_style"]
+disallow_any_explicit = false
 
 [tool.pyright]
 typeCheckingMode = "strict"
@@ -73,7 +81,7 @@ include = ["src", "tests", "quality"]
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP", "C90", "ASYNC"]
+select = ["E", "F", "I", "B", "UP", "C90", "ASYNC", "S110"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10

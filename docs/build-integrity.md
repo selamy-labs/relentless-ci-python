@@ -1,8 +1,8 @@
 # Locked build dependencies and archive scope
 
 The required local registry regenerates `quality/build-constraints.txt` from
-`uv.lock` and compares the fresh export byte for byte with the committed file.
-Git pins the committed file to LF on every platform, matching UV's export.
+`uv.lock` and compares its LF-canonical bytes with the committed file. Git pins
+the committed file to LF on every platform, matching UV's export.
 Missing, empty or stale exports fail. The native build then uses that file with
 `uv build --build-constraints quality/build-constraints.txt --require-hashes`.
 Each build dependency has an exact version and the approved wheel and source
@@ -22,8 +22,8 @@ source archive included `.codegraph/codegraph.db` and `.complexipy_cache`.
 The allowlist removes these local artifacts. The wheel contains the library,
 CLI, type marker, license and generated distribution metadata.
 
-Automated archive-content validation, installed-consumer checks, reproducible
-build evidence and hosted runtime matrices remain pending. The native build
-and hash-export gates alone do not establish that those checks are complete.
+The separate package gate validates actual wheel and source archives, rebuilds
+the wheel byte for byte, and tests isolated installed consumers. The hosted
+matrix runs those gates across the declared runtimes and operating systems.
 
 Native command semantics: [UV build](https://docs.astral.sh/uv/reference/cli/#uv-build).

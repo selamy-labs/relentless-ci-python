@@ -22,15 +22,101 @@ def test_environment_strips_checkout_imports(monkeypatch: pytest.MonkeyPatch) ->
             "PYTHONNOUSERSITE": "0",
             "PYTHONWARNINGS": "ignore",
             "PATH": "tools",
-            "KEEP": "value",
+            "GITHUB_TOKEN": "private",
         },
     )
     assert package_process.environment() == {
         "PATH": "tools",
-        "KEEP": "value",
         "PYTHONNOUSERSITE": "1",
         "PYTHONWARNINGS": "error",
     }
+    consumer = package_process.environment(Path("/consumer"))
+    assert consumer["HOME"] == "/consumer"
+    assert consumer["TMPDIR"] == "/consumer"
+    assert consumer["RLCI_CONSUMER_ROOT"] == "/consumer"
+    assert "GITHUB_TOKEN" not in consumer
+
+
+@pytest.mark.parametrize("platform", ["posix", "nt"])
+def test_guard_installs_in_the_consumer_site_and_refuses_replacement(
+    tmp_path: Path, platform: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    site = package_process.site_packages(tmp_path, platform)
+    site.mkdir(parents=True)
+    monkeypatch.setattr(
+        package_process, "os", type("Platform", (), {"name": platform})()
+    )
+    package_process.install_guard(tmp_path)
+    assert (site / "sitecustomize.py").read_text() == package_process.GUARD
+    with pytest.raises(ValueError, match="already owns sitecustomize"):
+        package_process.install_guard(tmp_path)
+
+
+def test_missing_consumer_site_fails_closed(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="site-packages is missing"):
+        package_process.install_guard(tmp_path)
+
+
+@pytest.mark.parametrize(
+    ("program", "message"),
+    [
+        ("print('clean')", "clean"),
+        ("import socket; socket.socket()", "network or child process denied"),
+        (
+            "import socket; socket.create_connection(('127.0.0.1', 9))",
+            "network or child process denied",
+        ),
+        (
+            "import subprocess; subprocess.run(['true'])",
+            "network or child process denied",
+        ),
+        ("import os; os.system('true')", "network or child process denied"),
+        (
+            "from pathlib import Path; Path('../outside').write_text('bad')",
+            "write outside temporary root denied",
+        ),
+        (
+            "import os; os.open('../outside', os.O_CREAT | os.O_WRONLY)",
+            "write outside temporary root denied",
+        ),
+        ("import os; os.mkdir('../outside')", "write outside temporary root denied"),
+        (
+            "from pathlib import Path; Path('inside').write_text('ok'); print('ok')",
+            "ok",
+        ),
+    ],
+)
+def test_native_guard_blocks_network_children_and_outside_writes(
+    tmp_path: Path, program: str, message: str
+) -> None:
+    virtual = tmp_path / "environment"
+    subprocess.run(
+        [
+            "uv",
+            "venv",
+            str(virtual),
+            "--python",
+            sys.executable,
+            "--no-python-downloads",
+        ],
+        check=True,
+        capture_output=True,
+    )
+    package_process.install_guard(virtual)
+    python = virtual / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    result = subprocess.run(
+        [str(python), "-I", "-c", program],
+        cwd=tmp_path,
+        env=package_process.environment(tmp_path),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if message in {"clean", "ok"}:
+        assert result.returncode == 0 and result.stdout.strip() == message
+        assert result.stderr == ""
+    else:
+        assert result.returncode != 0 and message in result.stderr
 
 
 def test_native_output_and_input(tmp_path: Path) -> None:
@@ -75,7 +161,7 @@ def test_bounded_structured_process_options(
             ["tool", "argument with spaces"],
             {
                 "cwd": tmp_path,
-                "env": package_process.environment(),
+                "env": package_process.environment(tmp_path),
                 "input": "input",
                 "capture_output": True,
                 "text": True,

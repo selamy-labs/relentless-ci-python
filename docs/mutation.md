@@ -17,7 +17,7 @@ are replaced, and missing or changed copies fail. The reproduction command is
 The launcher runs exactly `python -m pytest -x -q --color=no`.
 The adapter retains pytest stdout, stderr and
 its signed exit status in a fresh JSON record inside the native result. It does
-not select tests or change operators. The native trial bound is 60 seconds.
+not select tests or change operators. The native trial limit is 60 seconds.
 Credit requires actual pytest status 1, empty stderr, a completed `FAILED tests/`
 record and the exact one-failure summary. Signals, arbitrary nonzero exits,
 runtime diagnostics, duplicate JSON keys and missing or malformed records fail.
@@ -26,23 +26,68 @@ The complete native plan, worker outcomes and source restoration remain required
 Each coordinator and worker binds `PYTEST_DEBUG_TEMPROOT` to its own existing
 workspace. Pytest therefore keeps temporary tests and cleanup inside that
 workspace rather than sharing another worker's numbered directories. Test
-selection and strict warnings remain unchanged.
+selection, strict warnings and deadlines remain unchanged.
 
 Source, tests and protected configuration are copied into a temporary directory.
 The verifier compares their bytes with the original snapshot after execution,
 including the checkout, so changed inputs or unrestored mutations fail. The raw
 SQLite result is retained in `.quality-results/mutation-latest.sqlite`; only a
 validated session is also saved as `.quality-results/mutation.sqlite`.
+Raw report validation reads a private temporary copy and never opens the
+original database for writes. This avoids platform-dependent SQLite URI
+handling while preserving the exact complete-result check.
 
 Individual trials have a 60-second limit. Initialization and baseline use the
 ordinary 1,800-second command deadline. Full mutation execution has a separate
 21,240-second deadline in `quality/mutation-timeout.json`. These deadlines bound
 execution; reaching one never counts as a killed mutant or a successful gate.
-The 3,600-second pool bound failed after 3,800 of 3,951 bootstrap mutants were
-killed; its failure archive is retained. The expanded bound and 359-minute CI
-job ceiling match the independently audited publication candidate's recorded
-runtime policy. Neither mutation scope nor kill classification changes.
+The separate execution budget accommodates the complete verifier mutation plan.
+The first hosted Linux matrix, on standard four-CPU runners, retained between
+2,178 and 2,783 of 2,798 raw results at the former 3,600-second deadline.
+All four jobs failed. The first 6,000-second repair passed the source template's
+hosted PR matrix, but a renamed private instantiation of the same 2,769-mutant
+plan exceeded 6,000 seconds on Python 3.11, 3.12 and 3.13. With a 9,000-second
+pool, Python 3.11 completed all 2,769 native kills, while the other three jobs
+hit the former 120-minute hosted limit. A later run completed 3.11, 3.13 and
+3.14, but 3.12 reached the 9,000-second deadline with 141 results missing. The
+12,000-second pool and 240-minute hosted job subsequently passed the private
+instance and public PR matrices for that narrower plan.
+
+Broad gate enrollment then expanded the plan to 4,142 mutants. An isolated
+9,000-second run completed its native plan but retained 299 literal `timeout`
+outputs, which the strict validator rejected even where Cosmic Ray labelled
+them killed. The full baseline takes about 20 seconds on this host, leaving
+little headroom under a 30-second trial limit for a surviving mutant or worker
+contention. The 60-second individual trial, former 14,400-second whole-pool bound and
+260-minute hosted job allowed classification of the earlier broader plan. They
+do not reduce the test inventory, source scope, operators or result validation;
+timeouts, cancellations and partial outcomes still fail. The broader inventory
+must qualify independently before its hosted result can be credited.
+
+The public 4,318-mutant PR run completed Python 3.14 but hit the 14,400-second
+pool deadline on 3.12 with only 3,927 recorded results. Python 3.11 and 3.13
+reported uncreditable pytest collection errors from mutation of an evaluated
+type annotation. The annotation is quoted in this candidate so its static
+meaning remains intact. The private renamed-copy matrix also timed out with
+partial raw sessions on all four Linux runtimes. The owned pool allowance is
+now 354 minutes and the standard hosted analysis job 359 minutes, below the
+six-hour hosted job ceiling. A timeout still fails, and every source, operator,
+test, and raw-result integrity check remains enrolled.
+
+A complete 4,318-result local session identifies each mutant's first failing
+test, and a hosted Python 3.13 baseline supplies all 1,378 test timings. The 30
+cheapest high-yield witness files now run first while the entire collected test
+inventory and `pytest -x` trial command remain unchanged. The historical model
+reduces mean time before a known failure from 7.69 to 2.67 seconds; process
+startup and mutation interactions are not modeled. The fixed rank and unknown
+file fallback are source-bound and tested. A fresh full local run and all four
+hosted Linux runtimes must prove the actual speed and strict kills.
+
+The separate protected-base bootstrap candidate also exceeded the former
+3,600-second pool bound after 3,800 of 3,951 native kills. Its failure
+archive was retained; the expanded deadline then passed all 3,951 local
+trials without changing source scope, operators, or kill classification.
 
 Run the same full local verifier described in the README. It requires no paid
 service or account credentials for mutation analysis. Hosted matrix enforcement
-is pending publication of this template.
+requires a green run on the repaired published main revision.

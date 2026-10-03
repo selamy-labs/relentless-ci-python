@@ -1,9 +1,15 @@
 """Ordering preserves every identity and prioritizes direct behavioral witnesses."""
 
+import hashlib
+
 import pytest
 
-from quality.test_ordering import priority
+from quality.test_ordering import FAST_FIRST, priority
 from tests.conftest import pytest_collection_modifyitems
+
+EXPECTED_FIRST_SHA256 = (
+    "6667e18e42d0c48550a164a1012a1732a2d094c654355392dee5723479ebf7f7"
+)
 
 
 @pytest.mark.parametrize(
@@ -34,7 +40,8 @@ from tests.conftest import pytest_collection_modifyitems
 def test_priority_uses_only_the_exact_native_receipt_module(
     node: str, late: bool
 ) -> None:
-    assert priority(node) == (late, node)
+    assert priority(node)[0] is late
+    assert priority(node)[2] == node
 
 
 def test_ordering_preserves_duplicates_and_empty_inventory() -> None:
@@ -56,4 +63,17 @@ def test_constructed_cleanup_identity_has_value_equality() -> None:
         ]
     )
 
-    assert priority(node) == (True, node)
+    assert priority(node) == (True, 30, node)
+
+
+def test_evidence_rank_is_exact_and_unknown_files_remain_enrolled() -> None:
+    assert len(FAST_FIRST) == 30
+    assert hashlib.sha256("\n".join(FAST_FIRST).encode()).hexdigest() == (
+        EXPECTED_FIRST_SHA256
+    )
+    assert [priority(file + "::witness")[1] for file in FAST_FIRST] == list(range(30))
+    assert priority("tests/new_feature.py::test_case") == (
+        False,
+        30,
+        "tests/new_feature.py::test_case",
+    )

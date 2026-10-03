@@ -109,7 +109,10 @@ def test_accepts_untracked_generated_outputs_and_tracked_source(tmp_path: Path) 
     verify_tracked(tmp_path)
 
 
-@pytest.mark.parametrize("name", ["dist/output.py", "quality/__pycache__/hidden.py"])
+@pytest.mark.parametrize(
+    "name",
+    ["dist/output.py", ".complexipy_cache/README.md", "quality/__pycache__/hidden.py"],
+)
 def test_rejects_committed_files_in_generated_exemptions(
     tmp_path: Path, name: str
 ) -> None:

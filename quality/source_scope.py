@@ -4,6 +4,8 @@ import subprocess
 from collections.abc import Iterator
 from pathlib import Path
 
+from quality.portable_paths import verify_path_names, verify_python_name
+
 SOURCE_ROOTS = {"src", "tests", "quality"}
 GENERATED_ROOTS = {
     ".git",
@@ -13,6 +15,7 @@ GENERATED_ROOTS = {
     ".hypothesis",
     ".mypy_cache",
     ".ruff_cache",
+    ".complexipy_cache",
     ".quality-results",
     "node_modules",
     "dist",
@@ -55,6 +58,7 @@ def validate_path(root: Path, path: Path) -> None:
         raise ValueError(f"authored Python in a generated directory: {path}")
     if "__pycache__" in parts:
         raise ValueError(f"authored Python in a cache directory: {path}")
+    verify_python_name(path.relative_to(root))
 
 
 def verify_size(path: Path) -> None:
@@ -78,9 +82,12 @@ def verify_sources(root: Path) -> list[Path]:
 def verify_tracked(root: Path) -> None:
     """A contributor cannot commit authored files inside a generated exemption."""
     output = subprocess.check_output(["git", "ls-files", "-z"], cwd=root)
-    for name in output.decode("utf-8").split("\0"):
-        if name:
-            validate_tracked(Path(name))
+    if not output.endswith(b"\0"):
+        raise ValueError("tracked path inventory is empty or incomplete")
+    names = output[:-1].decode("utf-8").split("\0")
+    verify_path_names(names)
+    for name in names:
+        validate_tracked(Path(name))
 
 
 def validate_tracked(path: Path) -> None:
