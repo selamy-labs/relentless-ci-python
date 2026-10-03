@@ -11,6 +11,7 @@ from unittest.mock import patch
 import grimp
 import pytest
 
+import quality.architecture as architecture
 from quality.architecture import (
     declared_dependencies,
     module_name,
@@ -220,6 +221,20 @@ def test_production_forbidden_edge(scope: str) -> None:
     with pytest.raises(ValueError, match="production imports tooling"):
         verify_boundary(modules, "app", "tooling")
     verify_boundary(modules, "tooling", "app")
+
+
+def test_source_boundary_uses_value_equality(tmp_path: Path) -> None:
+    source = bytes.fromhex("737263").decode()
+    assert source == architecture.SOURCE_DIRECTORY
+    assert source is not architecture.SOURCE_DIRECTORY
+    modules = {"app": "src", "other": "src", "tooling": "quality"}
+    with patch.object(architecture, "SOURCE_DIRECTORY", source):
+        assert module_name(tmp_path, tmp_path / "src" / "app.py") == "app"
+        with pytest.raises(ValueError, match="production imports tooling"):
+            verify_boundary(modules, "app", "tooling")
+        verify_boundary(modules, "app", "other")
+        with pytest.raises(ValueError, match="undeclared runtime"):
+            verify_architecture(repository(tmp_path, "import pytest\n"))
 
 
 def test_edge_cycle_and_noncyclic_production() -> None:

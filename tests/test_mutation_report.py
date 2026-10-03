@@ -4,6 +4,7 @@ import json
 import sqlite3
 from contextlib import closing
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -120,8 +121,12 @@ def test_reads_real_sqlite_session(tmp_path: Path) -> None:
 
 def test_missing_session_fails_without_creating_file(tmp_path: Path) -> None:
     path = tmp_path / "missing.sqlite"
-    with pytest.raises(sqlite3.OperationalError):
-        verify_session(path)
+    with patch(
+        "quality.mutation_report.sqlite3.connect", wraps=sqlite3.connect
+    ) as open_db:
+        with pytest.raises(sqlite3.OperationalError):
+            verify_session(path)
+    assert open_db.call_args.kwargs == {"uri": True}
     assert not path.exists()
 
 

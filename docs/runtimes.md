@@ -5,6 +5,8 @@ The template declares Python 3.11, 3.12, 3.13 and 3.14. The primary
 reviewed on 2026-09-29. Its byte-for-byte snapshot is in
 `quality/python-releases.json`; `quality/runtime-support.json` records its
 SHA-256 digest, approved branches and review window.
+Git pins the snapshot checkout to LF on every platform, so the digest checks
+the exact reviewed bytes, including on Windows.
 
 The [developer guide](https://devguide.python.org/versions/) at commit
 `d9adc4f23cfad7e9e366f4fec408bdea18f99cc2` lists upstream support. Its generator
