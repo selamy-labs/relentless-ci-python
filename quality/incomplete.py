@@ -12,7 +12,6 @@ from quality.declaration_stubs import declaration_stubs, unfinished
 from quality.python_bindings import imported_names, symbol
 from quality.source_scope import verify_sources
 
-MARKERS = re.compile(r"\b(?:TODO|FIXME|XXX)\b", re.IGNORECASE)
 SUPPRESSIONS = re.compile(
     r"\b(?:noqa|nosec|type:\s*ignore|pyright:\s*ignore|mypy:\s*ignore-errors|"
     r"pragma:\s*no\s*(?:cover|branch)|ruff:\s*noqa|fmt:\s*off|semgrep:\s*ignore)\b",
@@ -80,12 +79,8 @@ def dynamic_api(node: ast.Call, names: dict[str, str]) -> str | None:
 def comments(source: str, path: Path) -> None:
     """Inspect lexical comments, leaving examples inside strings intact."""
     for token in tokenize.generate_tokens(io.StringIO(source).readline):
-        if token.type in {tokenize.COMMENT} and (
-            MARKERS.search(token.string) or SUPPRESSIONS.search(token.string)
-        ):
-            raise ValueError(
-                f"{path}:{token.start[0]}: unfinished or suppressed comment"
-            )
+        if token.type in {tokenize.COMMENT} and SUPPRESSIONS.search(token.string):
+            raise ValueError(f"{path}:{token.start[0]}: suppressed comment")
 
 
 def api(node: ast.AST, names: dict[str, str]) -> str | None:

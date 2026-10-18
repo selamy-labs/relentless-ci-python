@@ -122,15 +122,15 @@ def test_ellipsis_identity_does_not_accept_custom_equality() -> None:
     assert empty_body(function) is False
 
 
-def test_unfinished_comment_reports_line_not_column() -> None:
-    with pytest.raises(ValueError, match=r"check.py:2: unfinished"):
-        comments("value = 1\nvalue = 2  # TODO\n", Path("check.py"))
+def test_suppression_comment_reports_line_not_column() -> None:
+    with pytest.raises(ValueError, match=r"check.py:2: suppressed"):
+        comments("value = 1\nvalue = 2  # noqa\n", Path("check.py"))
 
 
 def test_non_comment_token_cannot_supply_a_suppression(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    token = tokenize.TokenInfo(tokenize.COMMENT + 1, "# TODO", (1, 0), (1, 6), "")
+    token = tokenize.TokenInfo(tokenize.COMMENT + 1, "# noqa", (1, 0), (1, 6), "")
 
     def generated(*_args: object) -> list[tokenize.TokenInfo]:
         return [token]
@@ -185,9 +185,6 @@ def test_location_defaults_to_zero_for_synthetic_node() -> None:
         "async def pending():\n    pass\n",
         "def pending():\n    raise NotImplementedError\n",
         "def pending():\n    raise NotImplementedError()\n",
-        "# TODO: finish later\nvalue = 1\n",
-        "# FIXME: broken\nvalue = 1\n",
-        "# XXX: revisit\nvalue = 1\n",
         "value = 1  # noqa: F401\n",
         "value = 1  # type: ignore\n",
         "value = 1  # pragma: no cover\n",

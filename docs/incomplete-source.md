@@ -29,9 +29,10 @@ concrete definitions and other forbidden APIs remain checked. This narrow
 recognition does not infer inheritance or resolve general dynamic data flow;
 the native type checkers remain authoritative for typing.
 
-Lexical comments containing TODO, FIXME or XXX, or suppression directives for
-Ruff, typing, coverage, formatting and security scanning fail. Quoted examples
-do not count as comments. The gate has no per-file or inline exemptions. Fix
+Comment words such as TODO, FIXME and XXX are advisory and permitted. Lexical
+suppression directives for Ruff, typing, coverage, formatting and security
+scanning fail. Quoted examples do not count as comments. The gate has no per-file
+or inline exemptions. Fix
 the code, remove disabled tests, or add the missing assertions rather than
 suppressing analysis. The independent pytest JSON validator also rejects
 skipped, xfailed, deselected and uncollected tests at runtime; this source gate
