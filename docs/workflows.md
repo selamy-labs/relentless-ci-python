@@ -24,7 +24,8 @@ Fix reported workflow or shell defects, then rerun the full command. Contributor
 ignore files and inline Zizmor ignores cannot substitute for a clean result.
 The native credential audit flags implicit persistence but accepts an explicit
 `persist-credentials: true` as intentional. The checked-in workflow uses `false`;
-the protected App-owned issuer guards changes to that policy. See the
+the protected App-owned issuer still reviews changes to that policy, but its
+check is not currently branch-required. See the
 [credential audit](https://docs.zizmor.sh/audits/#artipacked).
 
 The checked-in workflow runs the same complete local command, including full
