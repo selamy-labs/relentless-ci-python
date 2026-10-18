@@ -200,6 +200,15 @@ FORBIDDEN = [
         "def base() -> type[object]: return object\n"
         "class Port(base()):\n    def read(self) -> None: ...\n"
     ),
+    (
+        "from typing import Protocol\n"
+        "values = [(Protocol := object) for item in [1]]\n"
+        "class Port(Protocol):\n    def read(self) -> None: ...\n"
+    ),
+    (
+        "from typing import Protocol\nclass Port(Protocol):\n"
+        "    def read(self) -> None:\n        def concrete() -> None: pass\n"
+    ),
 ]
 
 
