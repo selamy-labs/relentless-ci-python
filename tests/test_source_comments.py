@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 
-from quality.incomplete import verify_file
 from tests.test_incomplete import authored, native_command
 
 
@@ -12,6 +11,8 @@ from tests.test_incomplete import authored, native_command
 def test_advisory_comment_words_do_not_make_completed_source_incomplete(
     tmp_path: Path, word: str
 ) -> None:
+    from quality.incomplete import verify_file
+
     source = f"# {word}: discuss a future improvement\nvalue = 1  # {word}\n"
     verify_file(authored(tmp_path, "quality/comment.py", source))
 

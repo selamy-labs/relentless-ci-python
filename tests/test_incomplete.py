@@ -11,17 +11,6 @@ from pathlib import Path
 
 import pytest
 
-from quality.declaration_stubs import empty_body
-from quality.incomplete import (
-    comments,
-    dynamic_api,
-    getattr_arguments,
-    verify_file,
-    verify_incomplete,
-    verify_node,
-)
-from quality.python_bindings import module_aliases
-
 
 def authored(root: Path, name: str, source: str) -> Path:
     path = root / name
@@ -46,6 +35,8 @@ def native_command(root: Path) -> subprocess.CompletedProcess[str]:
 
 
 def test_accepts_completed_code_and_literal_fixture_text(tmp_path: Path) -> None:
+    from quality.incomplete import verify_file, verify_incomplete
+
     source = (
         '"""A sample string mentions TODO, # noqa and pytest.skip()."""\n'
         "def actual() -> int:\n    return 1\n"
@@ -67,6 +58,8 @@ def test_accepts_completed_code_and_literal_fixture_text(tmp_path: Path) -> None
 
 
 def test_dotted_import_binds_its_first_component() -> None:
+    from quality.python_bindings import module_aliases
+
     node = ast.parse("import package.module").body[0]
     assert isinstance(node, ast.Import)
     assert module_aliases(node) == {"package": "package.module"}
@@ -74,6 +67,8 @@ def test_dotted_import_binds_its_first_component() -> None:
 
 @pytest.mark.parametrize("function", ["alpha", "zeta"])
 def test_only_literal_getattr_is_dynamic(function: str) -> None:
+    from quality.incomplete import getattr_arguments
+
     expression = ast.parse(f"{function}(pytest, 'skip')").body[0]
     assert isinstance(expression, ast.Expr)
     assert isinstance(expression.value, ast.Call)
@@ -81,6 +76,8 @@ def test_only_literal_getattr_is_dynamic(function: str) -> None:
 
 
 def test_dynamic_api_requires_statically_named_base() -> None:
+    from quality.incomplete import dynamic_api
+
     expression = ast.parse("getattr(make(), 'skip')").body[0]
     assert isinstance(expression, ast.Expr)
     assert isinstance(expression.value, ast.Call)
@@ -89,12 +86,16 @@ def test_dynamic_api_requires_statically_named_base() -> None:
 
 @pytest.mark.parametrize("error", ["AError", "ZError"])
 def test_other_exception_names_are_complete(tmp_path: Path, error: str) -> None:
+    from quality.incomplete import verify_file
+
     verify_file(
         authored(tmp_path, "quality/check.py", f"def run():\n    raise {error}\n")
     )
 
 
 def test_ast_empty_body_is_not_a_single_placeholder() -> None:
+    from quality.declaration_stubs import empty_body
+
     function = ast.parse("def run():\n    pass\n").body[0]
     assert isinstance(function, ast.FunctionDef)
     function.body = []
@@ -102,12 +103,16 @@ def test_ast_empty_body_is_not_a_single_placeholder() -> None:
 
 
 def test_two_statement_body_with_pass_is_not_empty() -> None:
+    from quality.declaration_stubs import empty_body
+
     function = ast.parse("def run():\n    pass\n    return 1\n").body[0]
     assert isinstance(function, ast.FunctionDef)
     assert empty_body(function) is False
 
 
 def test_ellipsis_identity_does_not_accept_custom_equality() -> None:
+    from quality.declaration_stubs import empty_body
+
     class EqualToEllipsis:
         def __eq__(self, other: object) -> bool:
             return other is Ellipsis
@@ -123,6 +128,8 @@ def test_ellipsis_identity_does_not_accept_custom_equality() -> None:
 
 
 def test_suppression_comment_reports_line_not_column() -> None:
+    from quality.incomplete import comments
+
     with pytest.raises(ValueError, match=r"check.py:2: suppressed"):
         comments("value = 1\nvalue = 2  # noqa\n", Path("check.py"))
 
@@ -130,6 +137,8 @@ def test_suppression_comment_reports_line_not_column() -> None:
 def test_non_comment_token_cannot_supply_a_suppression(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    from quality.incomplete import comments
+
     token = tokenize.TokenInfo(tokenize.COMMENT + 1, "# noqa", (1, 0), (1, 6), "")
 
     def generated(*_args: object) -> list[tokenize.TokenInfo]:
@@ -140,6 +149,8 @@ def test_non_comment_token_cannot_supply_a_suppression(
 
 
 def test_location_defaults_to_zero_for_synthetic_node() -> None:
+    from quality.incomplete import verify_node
+
     node = ast.Name(id="breakpoint", ctx=ast.Load())
     with pytest.raises(ValueError, match=r"check.py:0: debug"):
         verify_node(node, {}, Path("check.py"))
@@ -198,12 +209,16 @@ def test_location_defaults_to_zero_for_synthetic_node() -> None:
     ],
 )
 def test_rejects_unfinished_or_disabled_source(tmp_path: Path, source: str) -> None:
+    from quality.incomplete import verify_file
+
     path = authored(tmp_path, "quality/check.py", source)
     with pytest.raises(ValueError, match="incomplete|debug|suppressed"):
         verify_file(path)
 
 
 def test_nested_never_imported_file_is_enrolled(tmp_path: Path) -> None:
+    from quality.incomplete import verify_incomplete
+
     authored(tmp_path, "src/package/good.py", "value = 1\n")
     authored(tmp_path, "tests/nested/hidden.py", "breakpoint()\n")
     with pytest.raises(ValueError, match="debug or disabled-test API"):
@@ -219,6 +234,8 @@ def test_nested_never_imported_file_is_enrolled(tmp_path: Path) -> None:
     ],
 )
 def test_rejects_explicit_any(tmp_path: Path, source: str) -> None:
+    from quality.incomplete import verify_file
+
     path = authored(tmp_path, "src/package/type_probe.py", source)
     with pytest.raises(ValueError, match="explicit Any"):
         verify_file(path)
@@ -233,6 +250,8 @@ def test_rejects_explicit_any(tmp_path: Path, source: str) -> None:
     ],
 )
 def test_rejects_unapproved_cast(tmp_path: Path, source: str) -> None:
+    from quality.incomplete import verify_file
+
     path = authored(tmp_path, "quality/cast_probe.py", source)
     with pytest.raises(ValueError, match="unapproved type cast"):
         verify_file(path)
@@ -250,11 +269,15 @@ def test_rejects_unapproved_cast(tmp_path: Path, source: str) -> None:
     ],
 )
 def test_reviewed_adapter_cast_remains_exact(name: str) -> None:
+    from quality.incomplete import verify_file
+
     path = Path(__file__).resolve().parents[1] / "quality" / name
     verify_file(path)
 
 
 def test_empty_inventory_fails(tmp_path: Path) -> None:
+    from quality.incomplete import verify_incomplete
+
     with pytest.raises(ValueError, match="no authored Python"):
         verify_incomplete(tmp_path)
 

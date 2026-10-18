@@ -10,7 +10,6 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from quality.incomplete import verify_file
 from tests.test_incomplete import authored, native_command
 
 ALLOWED = [
@@ -258,6 +257,8 @@ FORBIDDEN = [
 
 @pytest.mark.parametrize("source", ALLOWED)
 def test_accepts_genuine_declarations(tmp_path: Path, source: str) -> None:
+    from quality.incomplete import verify_file
+
     verify_file(authored(tmp_path, "quality/declarations.py", source))
 
 
@@ -265,6 +266,8 @@ def test_accepts_genuine_declarations(tmp_path: Path, source: str) -> None:
 def test_rejects_concrete_stubs_and_false_declaration_bindings(
     tmp_path: Path, source: str
 ) -> None:
+    from quality.incomplete import verify_file
+
     with pytest.raises(ValueError, match="incomplete implementation"):
         verify_file(authored(tmp_path, "quality/declarations.py", source))
 
@@ -278,6 +281,8 @@ aliases = st.text(alphabet=string.ascii_letters, min_size=1, max_size=12).map(
 def test_protocol_import_alias_and_unrelated_parameter_do_not_change_acceptance(
     alias: str, body: str
 ) -> None:
+    from quality.incomplete import verify_file
+
     source = (
         f"from typing import Protocol as {alias}\n"
         f"def echo({alias}: object) -> object: return {alias}\n"
@@ -312,6 +317,8 @@ def test_protocol_import_alias_and_unrelated_parameter_do_not_change_acceptance(
 def test_declaration_recognition_does_not_exempt_other_protections(
     tmp_path: Path, source: str, reason: str
 ) -> None:
+    from quality.incomplete import verify_file
+
     with pytest.raises(ValueError, match=reason):
         verify_file(authored(tmp_path, "quality/declarations.py", source))
 
