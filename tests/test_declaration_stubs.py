@@ -93,6 +93,15 @@ ALLOWED = [
         "match None:\n    case _: pass\n"
         "class Port(Protocol):\n    def read(self) -> int: ...\n"
     ),
+    (
+        "from abc import ABC, abstractmethod\nclass Port(ABC):\n"
+        "    @abstractmethod\n    def read(self) -> None:\n"
+        '        """A documented declaration."""\n'
+    ),
+    (
+        "from abc import ABC, abstractmethod\nclass Port(ABC):\n"
+        "    @abstractmethod\n    def read(self) -> int: raise ValueError\n"
+    ),
 ]
 
 FORBIDDEN = [
@@ -209,6 +218,11 @@ FORBIDDEN = [
         "from typing import Protocol\nclass Port(Protocol):\n"
         "    def read(self) -> None:\n        def concrete() -> None: pass\n"
     ),
+    (
+        "from typing import Protocol\nclass Port(Protocol):\n"
+        "    def read(self) -> int:\n"
+        "        raise NotImplementedError\n        return 1\n"
+    ),
 ]
 
 
@@ -284,6 +298,8 @@ NATIVE_DECLARATIONS = (
     "    async def read(self) -> int: pass\n"
     "class AbstractPort(ABC):\n    @declaration\n"
     "    def read(self) -> int: raise NotImplementedError\n"
+    "class DocumentedPort(ABC):\n    @declaration\n"
+    '    def read(self) -> None: """A documented declaration."""\n'
 )
 
 

@@ -1,7 +1,6 @@
 """Resolve explicit import names and unambiguous bindings within lexical scopes."""
 
 import ast
-from collections import Counter
 from collections.abc import Iterator
 
 Scope = ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
@@ -138,40 +137,40 @@ def parameters(scope: Scope) -> set[str]:
 
 
 def absolute_aliases(node: ast.AST) -> dict[str, str]:
-    if isinstance(node, ast.ImportFrom) and node.level != 0:
+    if isinstance(node, ast.ImportFrom) and node.level:
         return {}
     return aliases(node)
 
 
-def binding_counts(scope: Scope, nodes: list[ast.AST]) -> Counter[str]:
-    counts: Counter[str] = Counter()
+def binding_sets(scope: Scope, nodes: list[ast.AST]) -> tuple[set[str], set[str]]:
+    bound = parameters(scope)
+    rebound = bound.copy()
     for node in nodes:
-        counts.update(bound_names(node))
-    counts.update(parameters(scope))
-    return counts
+        names = bound_names(node)
+        rebound.update(bound.intersection(names))
+        bound.update(names)
+    return bound, rebound
 
 
-def single_import(node: ast.AST, counts: Counter[str]) -> dict[str, str]:
-    return {
-        name: value
-        for name, value in absolute_aliases(node).items()
-        if counts[name] == 1
-    }
-
-
-def scope_imports(nodes: list[ast.AST], counts: Counter[str]) -> dict[str, str]:
+def scope_imports(nodes: list[ast.AST]) -> dict[str, str]:
     names: dict[str, str] = {}
     for node in nodes:
-        names.update(single_import(node, counts))
+        names.update(absolute_aliases(node))
     return names
 
 
 def scope_bindings(scope: Scope, inherited: dict[str, str]) -> dict[str, str]:
     """Only a single explicit import can establish a declaration exemption."""
     nodes = list(scope_nodes(scope))
-    counts = binding_counts(scope, nodes)
-    if "*" in counts:
+    bound, rebound = binding_sets(scope, nodes)
+    if "*" in bound:
         return {}
-    names = {name: value for name, value in inherited.items() if name not in counts}
-    names.update(scope_imports(nodes, counts))
+    names = {name: value for name, value in inherited.items() if name not in bound}
+    names.update(
+        {
+            name: value
+            for name, value in scope_imports(nodes).items()
+            if name not in rebound
+        }
+    )
     return names

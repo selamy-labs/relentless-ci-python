@@ -68,11 +68,11 @@ def abstract_method(
 
 
 def declaration_nodes(node: ast.FunctionDef | ast.AsyncFunctionDef) -> set[ast.AST]:
-    allowed: set[ast.AST] = {node}
-    body = implementation_body(node)
-    if len(body) == 1 and raises_unimplemented(body[0]):
-        allowed.add(body[0])
-    return allowed
+    match implementation_body(node):
+        case [sole] if raises_unimplemented(sole):
+            return {node, sole}
+        case _:
+            return {node}
 
 
 def methods(scope: ast.ClassDef) -> Iterator[ast.FunctionDef | ast.AsyncFunctionDef]:
