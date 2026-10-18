@@ -88,24 +88,30 @@ def scope_nodes(scope: Scope) -> Iterator[ast.AST]:
         yield from local_nodes(statement)
 
 
-def bound_names(node: ast.AST) -> set[str]:
+def import_binding(node: ast.Import | ast.ImportFrom, item: ast.alias) -> str:
+    if isinstance(node, ast.Import):
+        return item.asname or item.name.split(".")[0]
+    return item.asname or item.name
+
+
+def bound_names(node: ast.AST) -> list[str]:
     """Include same-scope control-flow bindings without entering child bodies."""
     match node:
         case ast.Name(id=name, ctx=ast.Store() | ast.Del()):
-            return {name}
+            return [name]
         case ast.Attribute(ctx=ast.Store() | ast.Del()):
             root = root_name(node)
-            return {root} if root else set()
+            return [root] if root else []
         case ast.Import() | ast.ImportFrom():
-            return set(aliases(node))
+            return [import_binding(node, item) for item in node.names]
         case (
             ast.ClassDef(name=name)
             | ast.FunctionDef(name=name)
             | ast.AsyncFunctionDef(name=name)
         ):
-            return {name}
+            return [name]
         case _:
-            return pattern_names(node)
+            return list(pattern_names(node))
 
 
 def pattern_names(node: ast.AST) -> set[str]:
@@ -142,13 +148,18 @@ def absolute_aliases(node: ast.AST) -> dict[str, str]:
     return aliases(node)
 
 
+def remember_bindings(names: list[str], bound: set[str], rebound: set[str]) -> None:
+    for name in names:
+        if name in bound:
+            rebound.add(name)
+        bound.add(name)
+
+
 def binding_sets(scope: Scope, nodes: list[ast.AST]) -> tuple[set[str], set[str]]:
     bound = parameters(scope)
     rebound = bound.copy()
     for node in nodes:
-        names = bound_names(node)
-        rebound.update(bound.intersection(names))
-        bound.update(names)
+        remember_bindings(bound_names(node), bound, rebound)
     return bound, rebound
 
 

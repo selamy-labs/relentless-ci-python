@@ -105,6 +105,14 @@ ALLOWED = [
 ]
 
 FORBIDDEN = [
+    (
+        "from typing import Any as P, Protocol as P\n"
+        "class Port(P):\n    def read(self) -> None: ...\n"
+    ),
+    (
+        "import other as types, typing as types\n"
+        "class Port(types.Protocol):\n    def read(self) -> None: ...\n"
+    ),
     "def read() -> None: pass\n",
     "async def read() -> None: ...\n",
     "class Concrete:\n    def read(self) -> None: pass\n",
