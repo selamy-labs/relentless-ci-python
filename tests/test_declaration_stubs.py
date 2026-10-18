@@ -15,6 +15,11 @@ from tests.test_incomplete import authored, native_command
 
 ALLOWED = [
     (
+        "from typing import Protocol\nclass Port(Protocol):\n"
+        "    def read(self) -> int:\n"
+        '        """Read a value."""\n        raise NotImplementedError\n'
+    ),
+    (
         "import typing as message\n"
         "def make() -> object:\n"
         "    import email.message\n"
@@ -113,6 +118,15 @@ ALLOWED = [
 ]
 
 FORBIDDEN = [
+    'def read() -> None:\n    """An unfinished implementation."""\n    pass\n',
+    (
+        "def make() -> object:\n"
+        "    import email.message\n"
+        "    from typing import Protocol as email\n"
+        "    class Port(email):\n"
+        "        def read(self) -> int: ...\n"
+        "    return Port\n"
+    ),
     (
         "from typing import Any as P, Protocol as P\n"
         "class Port(P):\n    def read(self) -> None: ...\n"
