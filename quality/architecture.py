@@ -129,7 +129,7 @@ def verify_pipeline_boundary(graph: grimp.ImportGraph) -> None:
     """Checkers and their parser must not depend on pipeline orchestration."""
     if "quality.pipeline" not in graph.modules:
         return
-    for importer in graph.modules & PIPELINE_CLIENTS:
+    for importer in sorted(graph.modules & PIPELINE_CLIENTS):
         if graph.chain_exists(importer, "quality.pipeline"):
             raise ValueError(f"checker imports pipeline: {importer}")
 

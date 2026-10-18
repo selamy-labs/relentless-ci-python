@@ -81,3 +81,12 @@ def test_repositories_without_pipeline_are_accepted() -> None:
     graph = grimp.ImportGraph()
     graph.add_module("quality.workflows")
     verify_pipeline_boundary(graph)
+
+
+def test_multiple_violations_report_a_stable_first_importer() -> None:
+    graph = import_graph({(client, "quality.pipeline") for client in CLIENTS})
+
+    with pytest.raises(ValueError) as error:
+        verify_pipeline_boundary(graph)
+
+    assert str(error.value) == "checker imports pipeline: quality.command_args"
