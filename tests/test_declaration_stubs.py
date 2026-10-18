@@ -14,6 +14,14 @@ from quality.incomplete import verify_file
 from tests.test_incomplete import authored, native_command
 
 ALLOWED = [
+    (
+        "import typing as message\n"
+        "def make() -> object:\n"
+        "    import email.message\n"
+        "    class Port(message.Protocol):\n"
+        "        def read(self) -> int: ...\n"
+        "    return Port\n"
+    ),
     "class Marker:\n    pass\n",
     "class DomainError(ValueError):\n    ...\n",
     'class Marker:\n    """A declaration."""\n    pass\n',
