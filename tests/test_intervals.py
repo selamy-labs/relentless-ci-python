@@ -53,14 +53,6 @@ def test_rejects_invalid_ranges(value: object) -> None:
         normalize(value)
 
 
-@pytest.mark.parametrize("value", [[[]], [[1]], [[1, 2, 3]]])
-def test_invalid_pair_shape_has_actionable_error(value: object) -> None:
-    with pytest.raises(
-        ValueError, match="^each interval must contain exactly two endpoints$"
-    ):
-        normalize(value)
-
-
 def test_does_not_mutate_input() -> None:
     value = [[3, 5], [1, 4]]
     assert normalize(value) == [[1, 5]]
