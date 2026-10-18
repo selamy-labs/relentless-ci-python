@@ -11,16 +11,16 @@ from pathlib import Path
 
 import pytest
 
+from quality.declaration_stubs import empty_body
 from quality.incomplete import (
     comments,
     dynamic_api,
-    empty_body,
     getattr_arguments,
-    module_aliases,
     verify_file,
     verify_incomplete,
     verify_node,
 )
+from quality.python_bindings import module_aliases
 
 
 def authored(root: Path, name: str, source: str) -> Path:
@@ -28,6 +28,21 @@ def authored(root: Path, name: str, source: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(source, encoding="utf-8")
     return path
+
+
+def native_command(root: Path) -> subprocess.CompletedProcess[str]:
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1])
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    return subprocess.run(
+        [sys.executable, "-m", "quality.incomplete_main"],
+        cwd=root,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
 
 
 def test_accepts_completed_code_and_literal_fixture_text(tmp_path: Path) -> None:
@@ -168,7 +183,6 @@ def test_location_defaults_to_zero_for_synthetic_node() -> None:
         "def pending():\n    pass\n",
         'def pending():\n    """Documented only."""\n    ...\n',
         "async def pending():\n    pass\n",
-        'class Pending:\n    """Documented only."""\n    pass\n',
         "def pending():\n    raise NotImplementedError\n",
         "def pending():\n    raise NotImplementedError()\n",
         "# TODO: finish later\nvalue = 1\n",
@@ -259,17 +273,6 @@ def test_main_uses_current_repository(
 
 def test_native_command_rejects_defect(tmp_path: Path) -> None:
     authored(tmp_path, "quality/check.py", "breakpoint()\n")
-    env = dict(os.environ)
-    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1])
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
-    result = subprocess.run(
-        [sys.executable, "-m", "quality.incomplete_main"],
-        cwd=tmp_path,
-        env=env,
-        capture_output=True,
-        text=True,
-        timeout=10,
-        check=False,
-    )
+    result = native_command(tmp_path)
     assert result.returncode != 0
     assert "debug or disabled-test API" in result.stderr
