@@ -7,6 +7,8 @@ from collections.abc import Iterator
 from pathlib import Path
 from types import ModuleType
 
+from quality.source_scope import verify_sources
+
 
 def module_name(path: Path) -> str:
     parts = (
@@ -48,10 +50,27 @@ def class_methods(owner: type[object]) -> Iterator[object]:
             yield value
 
 
+def test_library_discovery_matches_authored_scope() -> None:
+    root = Path.cwd()
+    expected = {
+        path.relative_to(root)
+        .with_suffix("")
+        .as_posix()
+        .removeprefix("src/")
+        .removesuffix("/__init__")
+        .replace("/", ".")
+        for path in verify_sources(root)
+        if path.relative_to(root).parts[0] in {"src", "quality"}
+        and not path.name.endswith("_main.py")
+        and path.name != "verify.py"
+    }
+    modules = library_modules()
+    assert {module.__name__ for module in modules} == expected
+
+
 def test_library_annotations_resolve_without_runtime_errors() -> None:
     members = [
         item for module in library_modules() for item in declared_members(module)
     ]
-    assert len(members) >= 300
     for member in members:
-        assert isinstance(typing.get_type_hints(member), dict)
+        typing.get_type_hints(member)

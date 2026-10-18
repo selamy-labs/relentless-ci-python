@@ -40,4 +40,11 @@ Remediation is to repair failures, remove skip/xfail or selection markers,
 restore omitted tests or fix reporter configuration. Do not narrow the
 discovered inventory or accept incomplete reports to make verification pass.
 
+Module loading is part of the behavior under test. The declaration and
+incomplete-source controls import their checker inside ordinary test functions.
+This keeps import and annotation defects observable as test failures rather
+than aborting collection. Imports are not caught or replaced. Independent
+library discovery and annotation-resolution tests remain enrolled. The mutation
+validator still rejects collection/setup errors and arbitrary nonzero exits.
+
 Report semantics: [pytest-json-report](https://github.com/numirias/pytest-json-report).

@@ -179,13 +179,17 @@ def test_cycle_across_package_roots(tmp_path: Path) -> None:
         verify_architecture(root)
 
 
-def native_command(root: Path) -> subprocess.CompletedProcess[str]:
+def native_command(
+    root: Path, quality_sources: tuple[tuple[str, str], ...] = ()
+) -> subprocess.CompletedProcess[str]:
     original = Path(__file__).resolve().parents[1]
     shutil.copytree(
         original / "quality",
         root / "quality",
         ignore=shutil.ignore_patterns("__pycache__"),
     )
+    for name, source in quality_sources:
+        (root / "quality" / name).write_text(source)
     (root / "pyproject.toml").write_text((original / "pyproject.toml").read_text())
     environment = dict(os.environ)
     environment["PYTHONPATH"] = os.pathsep.join([str(root / "src"), str(root)])
