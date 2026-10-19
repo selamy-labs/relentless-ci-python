@@ -88,6 +88,9 @@ The separate protected-base bootstrap candidate also exceeded the former
 archive was retained; the expanded deadline then passed all 3,951 local
 trials without changing source scope, operators, or kill classification.
 
+This historical note is retained as a changelog-style record of a removed
+trusted-policy bootstrap candidate; the issuer itself has been removed.
+
 Run the same full local verifier described in the README. It requires no paid
 service or account credentials for mutation analysis. Hosted matrix enforcement
 requires a green run on the repaired published main revision.

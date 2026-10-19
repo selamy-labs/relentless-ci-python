@@ -26,5 +26,4 @@ formats, stale receipt, hidden inventory, symlink and changed-input failures.
 
 Fix malformed or duplicate configuration, repair shell diagnostics, and rerun
 the common full command. The hosted full-analysis matrix runs this gate on every
-declared Python version; protected policy changes still receive the
-App-owned trusted-policy review, which is not currently a required check.
+declared Python version.

@@ -23,10 +23,8 @@ vulnerability checks are outside this gate's verified scope. Consult
 Fix reported workflow or shell defects, then rerun the full command. Contributor
 ignore files and inline Zizmor ignores cannot substitute for a clean result.
 The native credential audit flags implicit persistence but accepts an explicit
-`persist-credentials: true` as intentional. The checked-in workflow uses `false`;
-the protected App-owned issuer still reviews changes to that policy, but its
-check is not currently branch-required. See the
-[credential audit](https://docs.zizmor.sh/audits/#artipacked).
+`persist-credentials: true` as intentional. The checked-in workflow uses `false`.
+See the [credential audit](https://docs.zizmor.sh/audits/#artipacked).
 
 The checked-in workflow runs the same complete local command, including full
 mutation, on Linux for Python 3.11, 3.12, 3.13 and 3.14. All four versions also
@@ -41,10 +39,13 @@ results. Failed, skipped, cancelled or missing results fail its shell check.
 Analysis receipts are retained for seven days even on failure. Daily main runs
 repeat the checks to detect newly disclosed dependency vulnerabilities.
 
-The source repository's protected branch requires pull requests, the aggregate `Relentless CI gate` check from the GitHub Actions App (strict and up to date), conversation resolution and administrator enforcement. The separately issued `Relentless trusted policy` check from the dedicated App remains present and still rereads native run, review and source-bound rationale state before publishing a decision, but it is not currently a required status check and no approving review is required. The `CODEOWNERS` file
-assigns the whole repository, including `.github`, to two administrators.
-Generated copies must configure and read back their own protection settings;
-the checked-in workflow alone does not establish live enforcement.
+The source repository's protected branch requires pull requests, the aggregate
+`Relentless CI gate` check from the GitHub Actions App (strict and up to date),
+conversation resolution and administrator enforcement; no approving review is
+required. The `CODEOWNERS` file assigns the whole repository, including `.github`,
+to two administrators. Generated copies must configure and read back their own
+protection settings; the checked-in workflow alone does not establish live
+enforcement.
 
 The offline [runtime-support gate](runtimes.md) also requires both Python
 matrices and package metadata to match a current reviewed upstream snapshot.

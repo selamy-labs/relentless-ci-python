@@ -17,4 +17,4 @@ mutation scope.
 
 Protected root-generated areas are `.git` (Git metadata), `.venv` (`uv sync --locked --group dev`), `.codegraph` (local indexing), `.pytest_cache` (`python -m pytest`), `.hypothesis` (Hypothesis tests), `.mypy_cache` (`mypy`), `.ruff_cache` (`ruff`), `.complexipy_cache` (`complexipy src tests quality --max-complexity-allowed 5`), `.quality-results` (mutation and gate reports), `node_modules` (optional local Node tooling), `dist` (`uv build`), and `coverage` (coverage reports). None may contain tracked inputs. These entries authorize local generated state, not maintained-source exclusions. Hosted jobs recreate environments and artifacts from protected inputs, and the verifier rejects missing or stale native reports.
 
-The checker itself is covered and mutated with the rest of `quality`. Every hosted full-analysis job runs it; protected policy changes still receive the App-owned trusted-policy review, which is not currently a required check.
+The checker itself is covered and mutated with the rest of `quality`. Every hosted full-analysis job runs it.

@@ -46,8 +46,7 @@ provider normalization and both test/verifier production boundaries.
 
 Fix an edge or declare an actual runtime dependency; do not conceal it through
 ignore comments, a fake package mapping or policy changes. Every hosted full
-analysis job runs the graph gate; the protected trusted-policy issuer still
-reviews policy changes, but its check is not currently branch-required.
+analysis job runs the graph gate.
 
 References: [Grimp API](https://grimp.readthedocs.io/en/stable/usage.html) and
 [deptry configuration](https://deptry.com/usage/).
