@@ -17,8 +17,9 @@ legacy packages needed source-file inspection: `colorama`, `gitdb`,
 the exact lock and policy hashes, names, versions, source artifact URLs and
 hashes, wheel inventories and project notice. CI uploads the fresh
 `.quality-results/component-inventory.json` beside security and mutation
-reports. A dependency update must renew the matching policy entry and pass
-trusted policy-file review.
+reports. A dependency update must renew the matching policy entry and is expected to
+pass trusted policy-file review, which is present but not a required branch
+check.
 
 PyPI's legacy `License` field and classifiers are not always SPDX expressions.
 The recorded expressions are explicit review decisions for this lock, not a

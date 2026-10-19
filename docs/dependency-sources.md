@@ -13,7 +13,8 @@ nonregistry sources and unlisted artifact formats fail.
 The gate reads all locked packages and artifacts, including platform wheels not
 installed on the current machine. To change the registry or artifact policy,
 update the protected source and tests with an explicit rationale, obtain
-independent maintainer approval, and rerun the complete mutation and hosted
+independent maintainer approval (no approving review is branch-required),
+and rerun the complete mutation and hosted
 matrix. A green UV lock check alone is insufficient. This is source-integrity
 policy, not a vulnerability, license or legal compatibility verdict. The
 separate [component and license inventory](dependency-licenses.md) binds each
