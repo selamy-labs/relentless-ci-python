@@ -10,16 +10,29 @@ strings and test fixtures do not become false positives.
 The gate rejects debugger calls (`breakpoint`, `pdb.set_trace`,
 `pytest.set_trace`), direct pytest skip/xfail APIs, unittest
 skip/expected-failure decorators, and their directly imported aliases.
-Literal `getattr` access to these named APIs also fails. Definitions containing
-only `pass` or ellipsis, even after a docstring, and explicit
-`raise NotImplementedError` fail as unfinished implementations. A `pass` used
+Literal `getattr` access to these named APIs also fails. Concrete functions and
+methods containing only `pass` or ellipsis, even after a docstring, and explicit
+`raise NotImplementedError` fail as unfinished implementations. Empty classes
+are valid declarations, including marker and exception classes. A `pass` used
 to handle a known exception remains valid. Bare `print` is not classified as
 debug output because the verifier and CLI use stdout for protocol results;
 output correctness has separate tests.
 
-Lexical comments containing TODO, FIXME or XXX, or suppression directives for
-Ruff, typing, coverage, formatting and security scanning fail. Quoted examples
-do not count as comments. The gate has no per-file or inline exemptions. Fix
+Direct Protocol methods and methods decorated with `abc.abstractmethod` may
+declare a stub with `pass`, ellipsis or a sole `raise NotImplementedError`.
+Explicit imports from `typing`, `typing_extensions` and `abc`, their import
+aliases and Protocol subscripts are recognized. Recognition requires an
+unambiguous binding in the relevant lexical scope; relative or wildcard
+imports, rebinding and arbitrary assignment aliases cannot establish an
+exemption. Unrelated child scopes do not invalidate parent imports. Nested
+concrete definitions and other forbidden APIs remain checked. This narrow
+recognition does not infer inheritance or resolve general dynamic data flow;
+the native type checkers remain authoritative for typing.
+
+Comment words such as TODO, FIXME and XXX are advisory and permitted. Lexical
+suppression directives for Ruff, typing, coverage, formatting and security
+scanning fail. Quoted examples do not count as comments. The gate has no per-file
+or inline exemptions. Fix
 the code, remove disabled tests, or add the missing assertions rather than
 suppressing analysis. The independent pytest JSON validator also rejects
 skipped, xfailed, deselected and uncollected tests at runtime; this source gate

@@ -4,7 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from quality.pipeline import command
+from quality.command_args import command
 from quality.report_data import record, text
 from quality.security_reports import verify_empty
 

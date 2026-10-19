@@ -17,6 +17,9 @@ from quality.source_scope import verify_sources
 SOURCE_DIRECTORY = "src"
 SOURCE_ROOTS = frozenset({SOURCE_DIRECTORY})
 INITIALIZER = "__init__"
+PIPELINE_CLIENTS = frozenset(
+    {"quality.workflows", "quality.support_files", "quality.command_args"}
+)
 
 
 def module_name(root: Path, path: Path) -> str:
@@ -122,10 +125,20 @@ def verify_external(
         raise ValueError(f"undeclared runtime dependency: {importer} -> {imported}")
 
 
+def verify_pipeline_boundary(graph: grimp.ImportGraph) -> None:
+    """Checkers and their parser must not depend on pipeline orchestration."""
+    if "quality.pipeline" not in graph.modules:
+        return
+    for importer in sorted(graph.modules & PIPELINE_CLIENTS):
+        if graph.chain_exists(importer, "quality.pipeline"):
+            raise ValueError(f"checker imports pipeline: {importer}")
+
+
 def verify_architecture(root: Path) -> None:
     """Complete discovered scope, native cycle analysis and production boundaries."""
     modules = owned_modules(root, verify_sources(root))
     graph = native_graph(root, modules)
+    verify_pipeline_boundary(graph)
     runtime = declared_dependencies(root)
     tooling = tooling_dependencies(root, runtime)
     distributions = packages_distributions()

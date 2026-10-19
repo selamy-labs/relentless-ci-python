@@ -8,7 +8,7 @@ import tomllib
 from collections.abc import Iterator
 from pathlib import Path
 
-from quality.pipeline import command
+from quality.command_args import command
 from quality.runtime_data import read_yaml, unique_object
 from quality.source_scope import GENERATED_ROOTS
 from quality.workflows import policy, tool
