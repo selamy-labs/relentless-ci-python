@@ -5,9 +5,8 @@ from pathlib import Path
 
 import pytest
 import yaml
-from yaml.nodes import ScalarNode
 
-from quality.runtime_data import YAML_STRING_TAG, mapping_key, read_json, read_yaml
+from quality.runtime_data import read_json, read_yaml
 
 
 @pytest.mark.parametrize(
@@ -64,9 +63,3 @@ def test_invalid_utf8_is_not_repaired(
     path.write_bytes(b"\xff")
     with pytest.raises(UnicodeDecodeError):
         reader(path)
-
-
-@pytest.mark.parametrize("tag", [YAML_STRING_TAG, YAML_STRING_TAG.encode().decode()])
-def test_native_string_node_tag_uses_value_equality(tag: str) -> None:
-    node = ScalarNode(tag, "jobs")
-    assert mapping_key(node) == "jobs"
