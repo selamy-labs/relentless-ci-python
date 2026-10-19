@@ -12,7 +12,12 @@ from typing import cast
 from aiohttp import web
 
 from quality.report_data import record, text
-from quality.trial_launcher import prepare_launcher, require_launcher
+from quality.trial_launcher import (
+    coverage_path,
+    prepare_launcher,
+    require_coverage,
+    require_launcher,
+)
 
 Handler = Callable[[web.Request], Awaitable[web.StreamResponse]]
 
@@ -34,7 +39,6 @@ async def serve(root: Path, nonce: str) -> None:
             listener.bind(("127.0.0.1", 0))
             await web.SockSite(runner, listener).start()
             output = root / ".quality-results"
-            output.mkdir(exist_ok=True)
             ready = {
                 "nonce": nonce,
                 "url": f"http://127.0.0.1:{listener.getsockname()[1]}",
@@ -51,11 +55,14 @@ def journal_handler(root: Path, handler: Handler) -> Handler:
     """Retain native requests after completion without changing SDK responses."""
 
     expected = prepare_launcher(root)
+    selection = coverage_path(root).read_bytes()
 
     async def handle(request: web.Request) -> web.StreamResponse:
         require_launcher(root, expected)
+        require_coverage(root, selection)
         response = await handler(request)
         require_launcher(root, expected)
+        require_coverage(root, selection)
         value: object = await request.json()
         with (root / ".quality-results" / "worker-jobs.jsonl").open(
             "a", encoding="utf-8"

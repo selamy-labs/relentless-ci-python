@@ -14,10 +14,34 @@ Worker requests verify its bytes before and after native execution; stale copies
 are replaced, and missing or changed copies fail. The reproduction command is
 `python -c 'from pathlib import Path; from quality.trial_launcher import prepare_launcher; prepare_launcher(Path.cwd())'`.
 
-The launcher runs exactly `python -m pytest -x -q --color=no`.
-The adapter retains pytest stdout, stderr and
-its signed exit status in a fresh JSON record inside the native result. It does
-not select tests or change operators. The native trial limit is 60 seconds.
+The launcher runs `python -m pytest -x -q --color=no`, optionally followed by
+selected test function ids. Before the baseline, the coordinator runs the whole
+suite once with `--cov --cov-context=test` and writes
+`.quality-results/mutation-coverage.json`: the pristine text of every `src` and
+`quality` module and, for each line inside a function body, the test functions
+whose execution reached any line of the innermost enclosing statement. Lines in
+signatures, decorators, class or module bodies, lines executed during import or
+collection, and lines no test executed stay unmapped. The enrolled
+`quality.mutation_context` plugin exports `COVERAGE_PROCESS_START` and the
+current test id during each test, so Python subprocesses that inherit the
+environment are measured with that test's context and native subprocess tests
+remain selectable. A subprocess started with a scrubbed environment is not
+measured; a mutant killed only there would survive and fail the gate rather
+than pass. Each worker receives a
+byte copy, and every request verifies those bytes before and after native
+execution, exactly like the launcher.
+
+A trial compares the workspace with the pristine sources. Only one changed
+module whose changed lines keep the original line count and are all mapped
+narrows the command to the union of their covering test functions, in the
+unchanged conftest order. No map, no change, several changed modules, added or
+removed lines, or any unmapped line runs the complete suite. Selection never
+changes operators, the mutant plan or result validation, and a mutant that no
+selected test kills is still a survivor. The `cosmic-ray baseline` still runs
+the complete suite because nothing has changed.
+
+The adapter retains pytest stdout, stderr and its signed exit status in a fresh
+JSON record inside the native result. The native trial limit is 60 seconds.
 Credit requires actual pytest status 1, empty stderr, a completed `FAILED tests/`
 record and the exact one-failure summary. Signals, arbitrary nonzero exits,
 runtime diagnostics, duplicate JSON keys and missing or malformed records fail.

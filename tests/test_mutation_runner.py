@@ -31,6 +31,11 @@ def isolated_transport(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
         return []
 
     monkeypatch.setattr(mutation, "execute_pool", execute)
+
+    def collect(root: Path, timeout: float, env: dict[str, str]) -> None:
+        mutation.run(["collect", "coverage"], root, timeout, env)
+
+    monkeypatch.setattr(mutation, "collect", collect)
     journal = MagicMock()
     monkeypatch.setattr(mutation, "verify_journals", journal)
     return journal
@@ -103,6 +108,7 @@ def test_mutates_an_isolated_copy_with_fresh_baseline(
     isolated_transport.assert_called_once_with(targets[-1], [])
     assert received == [
         ["cosmic-ray", "init", "cosmic-ray.toml", "mutation.sqlite"],
+        ["collect", "coverage"],
         ["cosmic-ray", "baseline", "cosmic-ray.toml"],
         ["cosmic-ray", "exec", "cosmic-ray.toml", "mutation.sqlite"],
     ]

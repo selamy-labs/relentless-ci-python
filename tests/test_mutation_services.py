@@ -43,12 +43,15 @@ def test_accepts_bare_private_loopback_url_at_port_boundaries(port: int) -> None
 def test_launch_copies_inputs_and_binds_own_environment(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, preexisting: bool
 ) -> None:
-    copied = MagicMock()
+    def copy(_root: Path, target: Path) -> None:
+        target.mkdir(exist_ok=True)
+
+    copied = MagicMock(side_effect=copy)
     launch = MagicMock(return_value=MagicMock())
     monkeypatch.setattr(services, "copy_inputs", copied)
     monkeypatch.setattr(services, "start_owned", launch)
-    if preexisting:
-        (tmp_path / ".quality-results").mkdir()
+    (tmp_path / ".quality-results").mkdir(exist_ok=preexisting)
+    (tmp_path / ".quality-results/mutation-coverage.json").write_text("{}")
     inherited = {
         "KEEP": "value",
         "PYTHONPATH": "foreign",
@@ -64,6 +67,7 @@ def test_launch_copies_inputs_and_binds_own_environment(
         environment(target, inherited),
     )
     assert worker.root == target
+    assert (target / ".quality-results/mutation-coverage.json").read_text() == "{}"
     assert worker.owned is launch.return_value
     assert inherited == {
         "KEEP": "value",

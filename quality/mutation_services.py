@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 import sys
 import time
 from dataclasses import dataclass
@@ -17,6 +18,7 @@ from quality.owned_commands import (
     start_owned,
 )
 from quality.report_data import record, text
+from quality.trial_launcher import coverage_path
 
 MAXIMUM_WORKERS = 8
 PRIVATE_ADDRESS = ("http", "127.0.0.1", None, None)
@@ -42,6 +44,8 @@ def launch(root: Path, index: int, timeout: float, env: dict[str, str]) -> Worke
     target = output / f"mutation-worker-{index}"
     target.mkdir()
     copy_inputs(root, target)
+    coverage_path(target).parent.mkdir()
+    shutil.copy2(coverage_path(root), coverage_path(target))
     nonce = uuid4().hex
     owned = start_owned(
         [sys.executable, "-m", "quality.mutation_worker_main", nonce],

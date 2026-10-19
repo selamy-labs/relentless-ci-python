@@ -8,6 +8,17 @@ def launcher_path(root: Path) -> Path:
     return root / ".quality-results" / "mutation-trial.py"
 
 
+def coverage_path(root: Path) -> Path:
+    """The trial reads this relative copy from the worker's working directory."""
+    return root / ".quality-results" / "mutation-coverage.json"
+
+
+def require_coverage(root: Path, expected: bytes) -> None:
+    """Trials may not change the test selection used by later mutants."""
+    if coverage_path(root).read_bytes() != expected:
+        raise ValueError("mutation coverage map changed")
+
+
 def prepare_launcher(root: Path) -> bytes:
     """Always replace stale launchers with the current immutable source snapshot."""
     source = (root / "quality" / "mutation_trial.py").read_bytes()
