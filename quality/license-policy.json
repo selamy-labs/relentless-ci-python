@@ -5,7 +5,7 @@
   "approvedExpressions": ["Apache-2.0", "Apache-2.0 AND MIT", "Apache-2.0 OR BSD-2-Clause", "BSD-2-Clause", "BSD-3-Clause", "LGPL-2.1-only", "MIT", "MPL-2.0", "PSF-2.0"],
   "packages": {
     "aiohappyeyeballs==2.7.1": {"spdx":"PSF-2.0","evidenceKind":"pypi-release-metadata","evidenceSha256":"90a6fe95d5083b27fa3cb21b46a78cdf84befd72a03001ea3182747e6794b983","evidenceUrl":"https://pypi.org/pypi/aiohappyeyeballs/2.7.1/json"},
-    "aiohttp==3.14.3": {"spdx":"Apache-2.0 AND MIT","evidenceKind":"pypi-release-metadata","evidenceSha256":"2a6218c11b9f47a5a71e682ce41f0915afd20c0960a3f8679a6455929ef5496f","evidenceUrl":"https://pypi.org/pypi/aiohttp/3.14.3/json"},
+    "aiohttp==3.14.4": {"spdx":"Apache-2.0 AND MIT","evidenceKind":"pypi-release-metadata","evidenceSha256":"1beb9334ed6c6ad1095295f6874aee0b1c11298c259fb53f8fd55ac299c30c9f","evidenceUrl":"https://pypi.org/pypi/aiohttp/3.14.4/json"},
     "aiosignal==1.4.0": {"spdx":"Apache-2.0","evidenceKind":"pypi-release-metadata","evidenceSha256":"443bdf542505c93e62117e868b9984b0c5784d50ab5b40ad0ae36d600b2d75ae","evidenceUrl":"https://pypi.org/pypi/aiosignal/1.4.0/json"},
     "anybadge==1.16.0": {"spdx":"MIT","evidenceKind":"pypi-release-metadata","evidenceSha256":"a110f8595dd587465f97c1fd97fd6bc7192e9aa52aaed6fb434a569ab3599353","evidenceUrl":"https://pypi.org/pypi/anybadge/1.16.0/json"},
     "ast-serialize==0.11.2": {"spdx":"MIT","evidenceKind":"pypi-release-metadata","evidenceSha256":"26293b7d28c814717c2d9b47df7269db0a87bd243377e1df0cbf759157bf04a9","evidenceUrl":"https://pypi.org/pypi/ast-serialize/0.11.2/json"},
