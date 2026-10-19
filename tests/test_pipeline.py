@@ -116,6 +116,32 @@ def test_runs_every_command_in_order_then_mutation(
     ]
 
 
+def test_analysis_returns_the_policy_without_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    registry(tmp_path, [["first"]])
+    received: list[str] = []
+
+    def command(_args: list[str], _root: Path, _time: float, _env: object) -> None:
+        received.append("run")
+
+    def results(_root: Path, _sources: list[Path]) -> None:
+        received.append("tests")
+
+    def security(_root: Path, _timeout: float) -> None:
+        received.append("sec")
+
+    monkeypatch.setattr(pipeline, "verify_sources", scope)
+    monkeypatch.setattr(pipeline, "verify_tracked", tracked)
+    monkeypatch.setattr(pipeline, "run", command)
+    monkeypatch.setattr(pipeline, "prepare_tests", tracked)
+    monkeypatch.setattr(pipeline, "verify_tests", results)
+    monkeypatch.setattr(pipeline, "verify_security", security)
+    monkeypatch.setattr(pipeline, "mutate", pytest.fail)
+    assert pipeline.analyze(tmp_path) == 5
+    assert received == ["run", "tests", "sec"]
+
+
 def test_failed_command_prevents_later_checks(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -142,6 +168,16 @@ def test_module_entry_point_invokes_the_current_repository(
     received: list[Path] = []
     monkeypatch.setattr(pipeline, "verify", received.append)
     runpy.run_module("quality.verify", run_name="__main__")
+    assert received == [Path.cwd()]
+
+
+def test_analysis_entry_point_runs_gates_without_mutation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    received: list[Path] = []
+    monkeypatch.setattr(pipeline, "analyze", received.append)
+    monkeypatch.setattr(pipeline, "mutate", pytest.fail)
+    runpy.run_module("quality.analysis_main", run_name="__main__")
     assert received == [Path.cwd()]
 
 

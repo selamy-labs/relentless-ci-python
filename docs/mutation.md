@@ -27,7 +27,14 @@ current test id during each test, so Python subprocesses that inherit the
 environment are measured with that test's context and native subprocess tests
 remain selectable. A subprocess started with a scrubbed environment is not
 measured; a mutant killed only there would survive and fail the gate rather
-than pass. Each worker receives a
+than pass. The map run forces `COVERAGE_CORE=ctrace` because the Python 3.14
+default `sysmon` core drops per-test contexts. Coverage startup slows each
+measured child by about 0.1 seconds, which can trip sub-second native timing
+tests, so the map run accepts pytest's tests-failed status 1 and keeps the
+contexts recorded before that failure. Any other status or a timeout still
+fails, and the owned supervisor still reaps every descendant. A shortened context can only drop tests from a selection,
+which may create a survivor but never a kill. The ordinary test gate and the
+complete baseline still require every test to pass. Each worker receives a
 byte copy, and every request verifies those bytes before and after native
 execution, exactly like the launcher.
 
@@ -114,6 +121,15 @@ trials without changing source scope, operators, or kill classification.
 
 This historical note is retained as a changelog-style record of a removed
 trusted-policy bootstrap candidate; the issuer itself has been removed.
+
+Hosted CI runs this mutation phase once, inside the Python 3.14 full-analysis
+job; Python 3.11, 3.12 and 3.13 run every other gate through
+`python -m quality.analysis_main`. Before this change each of the four jobs
+repeated the identical mutant plan for about 3.5 to 4 hours. The plan, operators,
+kill requirement and receipts are unchanged. A mutant that only an older
+runtime's behavior would kill is therefore not checked there; 100% line and
+branch coverage and the whole test suite still run on every declared version.
+The aggregate gate requires the 3.14 job, so mutation still blocks merges.
 
 Run the same full local verifier described in the README. It requires no paid
 service or account credentials for mutation analysis. Hosted matrix enforcement

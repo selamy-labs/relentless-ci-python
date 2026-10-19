@@ -52,11 +52,12 @@ The adapter defers annotation evaluation on all declared Python versions.
 This keeps a malformed annotation from failing import before the strict native
 type consumer can reject it, including on Python 3.11 through 3.13.
 
-The workflow requests full Linux analysis, coverage and every mutation for each
-branch, plus build/install/product behavior on Linux, macOS and Windows.
-A declared matrix is not proof that its jobs passed. Every publication candidate
-must pass full Linux analysis on Python 3.11–3.14 and installed behavior across
-Linux, macOS and Windows. Native run and raw artifact evidence must bind to the
+The workflow requests full Linux analysis and coverage for each branch, every
+mutation on Python 3.14, plus build/install/product behavior on Linux, macOS
+and Windows. A declared matrix is not proof that its jobs passed. Every
+publication candidate must pass full Linux analysis on Python 3.11–3.14,
+including complete mutation on 3.14, and installed behavior across Linux, macOS
+and Windows. Native run and raw artifact evidence must bind to the
 exact candidate revision.
 
 Before publication or a policy renewal, verify upstream support, review current

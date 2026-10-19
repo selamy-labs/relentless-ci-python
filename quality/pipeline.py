@@ -22,8 +22,8 @@ def checks(root: Path) -> list[list[str]]:
     return [command(item) for item in value]
 
 
-def verify(root: Path) -> None:
-    """Run required definitions in order and stop on the first failed gate."""
+def analyze(root: Path) -> float:
+    """Run every non-mutation gate in order and stop on the first failure."""
     policy = read_deadline(root / "quality" / "timeout.json")
     sources = verify_sources(root)
     prepare_tests(root)
@@ -32,4 +32,9 @@ def verify(root: Path) -> None:
         run(item, root, policy, dict(os.environ))
     verify_tests(root, sources)
     verify_security(root, policy)
-    mutate(root, policy)
+    return policy
+
+
+def verify(root: Path) -> None:
+    """Run the complete local command: every analysis gate, then every mutant."""
+    mutate(root, analyze(root))

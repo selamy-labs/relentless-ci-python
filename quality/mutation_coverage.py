@@ -2,10 +2,12 @@
 
 import ast
 import json
+import subprocess
 import sys
 from pathlib import Path
 
 from coverage import CoverageData
+from pytest import ExitCode
 
 from quality.owned_commands import run_owned
 from quality.trial_launcher import coverage_path
@@ -24,6 +26,26 @@ def collect(root: Path, timeout: float, env: dict[str, str]) -> bytes:
     measured = env.copy()
     measured["COVERAGE_FILE"] = str(contexts)
     measured["MUTATION_COVERAGE_RC"] = str(settings)
+    # Python 3.14 defaults to sys.monitoring, which drops per-test contexts.
+    measured["COVERAGE_CORE"] = "ctrace"
+    try:
+        measure(root, timeout, measured)
+    except subprocess.CalledProcessError as error:
+        if error.returncode != ExitCode.TESTS_FAILED:
+            raise
+    data = CoverageData(str(contexts))
+    data.read()
+    try:
+        value = coverage_map(root, data)
+    finally:
+        data.close()
+    encoded = json.dumps(value, sort_keys=True).encode("utf-8")
+    output.write_bytes(encoded)
+    return encoded
+
+
+def measure(root: Path, timeout: float, env: dict[str, str]) -> None:
+    """Failed tests still leave contexts; selection can only lose coverage."""
     run_owned(
         [
             sys.executable,
@@ -40,17 +62,8 @@ def collect(root: Path, timeout: float, env: dict[str, str]) -> bytes:
         ],
         root,
         timeout,
-        measured,
+        env,
     )
-    data = CoverageData(str(contexts))
-    data.read()
-    try:
-        value = coverage_map(root, data)
-    finally:
-        data.close()
-    encoded = json.dumps(value, sort_keys=True).encode("utf-8")
-    output.write_bytes(encoded)
-    return encoded
 
 
 def subprocess_settings(root: Path, contexts: Path) -> str:

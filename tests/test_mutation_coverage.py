@@ -173,6 +173,7 @@ def test_collect_runs_the_complete_suite_with_test_contexts(
                 "KEEP": "1",
                 "COVERAGE_FILE": str(contexts),
                 "MUTATION_COVERAGE_RC": str(settings),
+                "COVERAGE_CORE": "ctrace",
             },
         )
     ]
@@ -180,6 +181,44 @@ def test_collect_runs_the_complete_suite_with_test_contexts(
     assert path.read_bytes() == encoded
     assert json.loads(encoded)["lines"] == {"src/item.py": {"2": [0]}}
     assert encoded.decode().startswith('{"lines"')
+
+
+def failing_suite(status: int) -> object:
+    def owned(
+        command: list[str], root: Path, timeout: float, env: dict[str, str]
+    ) -> None:
+        data = CoverageData(env["COVERAGE_FILE"])
+        data.set_context("tests/test_x.py::test_x|run")
+        data.add_lines({str((root / "src/item.py").resolve()): [2]})
+        data.write()
+        data.close()
+        raise subprocess.CalledProcessError(status, command)
+
+    return owned
+
+
+def test_failed_tests_still_produce_their_recorded_contexts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "src").mkdir()
+    (tmp_path / "quality").mkdir()
+    (tmp_path / "src/item.py").write_text("def f():\n    return 1\n")
+    monkeypatch.setattr(mutation_coverage, "run_owned", failing_suite(1))
+    encoded = mutation_coverage.collect(tmp_path, 9, {})
+    assert json.loads(encoded)["lines"] == {"src/item.py": {"2": [0]}}
+
+
+@pytest.mark.parametrize("status", [2, 3, 4, 5, -9])
+def test_other_suite_failures_are_not_mapped(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, status: int
+) -> None:
+    (tmp_path / "src").mkdir()
+    (tmp_path / "quality").mkdir()
+    (tmp_path / "src/item.py").write_text("def f():\n    return 1\n")
+    monkeypatch.setattr(mutation_coverage, "run_owned", failing_suite(status))
+    with pytest.raises(subprocess.CalledProcessError):
+        mutation_coverage.collect(tmp_path, 9, {})
+    assert not (tmp_path / ".quality-results/mutation-coverage.json").exists()
 
 
 names = st.from_regex(r"tests/test_[a-z]{1,3}\.py::test_[a-z]{1,3}", fullmatch=True)
