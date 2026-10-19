@@ -5,7 +5,6 @@ import json
 import string
 import subprocess
 
-import pytest
 from hypothesis import example, given, seed, settings
 from hypothesis import strategies as st
 
@@ -92,15 +91,4 @@ def test_bounded_malformed_json_installed(value: str, mode: int) -> None:
 @settings(max_examples=32, deadline=None)
 @given(value=INVALID, first=st.booleans())
 def test_bounded_invalid_endpoint_installed(value: object, first: bool) -> None:
-    installed_rejects(typed_endpoint(value, first), "endpoints must be integers")
-
-
-@pytest.mark.parametrize("mode", range(4))
-def test_malformed_json_installed_edges(mode: int) -> None:
-    installed_rejects(malformed("", mode), "invalid JSON")
-
-
-@pytest.mark.parametrize("value", [False, None, "invalid", 0.5])
-@pytest.mark.parametrize("first", [True, False])
-def test_invalid_endpoint_installed_edges(value: object, first: bool) -> None:
     installed_rejects(typed_endpoint(value, first), "endpoints must be integers")

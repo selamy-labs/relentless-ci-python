@@ -39,11 +39,13 @@ results. Failed, skipped, cancelled or missing results fail its shell check.
 Analysis receipts are retained for seven days even on failure. Daily main runs
 repeat the checks to detect newly disclosed dependency vulnerabilities.
 
-The source repository's protected branch requires the aggregate `Relentless CI gate`
-from the GitHub Actions App. The `CODEOWNERS` file assigns the whole repository,
-including `.github`, to two administrators. Generated copies must configure and
-read back their own protection settings; the checked-in workflow alone does not
-establish live enforcement.
+The source repository's protected branch requires pull requests, the aggregate
+`Relentless CI gate` check from the GitHub Actions App (strict and up to date),
+conversation resolution and administrator enforcement; no approving review is
+required. The `CODEOWNERS` file assigns the whole repository, including `.github`,
+to two administrators. Generated copies must configure and read back their own
+protection settings; the checked-in workflow alone does not establish live
+enforcement.
 
 The offline [runtime-support gate](runtimes.md) also requires both Python
 matrices and package metadata to match a current reviewed upstream snapshot.

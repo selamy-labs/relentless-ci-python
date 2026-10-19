@@ -17,7 +17,8 @@ mise --yes --locked exec -- uv run --locked --group dev python -m quality.verify
 This selects a compatible Python through UV. Python 3.11–3.14 are the declared
 target runtimes. Hosted full-analysis jobs run the same command independently
 for each version, and installed behavior runs on Linux, macOS and Windows. Native
-branch protection enforces policy changes.
+branch protection (pull requests, the `Relentless CI gate` check, conversation
+resolution and administrator enforcement) gates merges.
 
 The language lock audit does not cover native analyzer binaries; their artifact hashes are pinned separately. Security tooling cannot prove absence of all vulnerabilities, and unreported upstream vulnerabilities are outside known-vulnerability scans.
 
