@@ -42,7 +42,6 @@ path is never collected.
 Native temporary-source probes cover clean handling, imported aliases,
 decorators, literal dynamic access, placeholders, comment markers, suppression
 directives, nested inventory and an empty inventory. The full hosted matrix
-runs this gate, and protected changes require the App-owned policy check.
-Arbitrary computed attribute names are outside this syntactic rule; the
-repository also runs strict type/lint, security, coverage, complete test-result
-and full mutation gates.
+runs this gate. Arbitrary computed attribute names are outside this syntactic
+rule; the repository also runs strict type/lint, security, coverage, complete
+test-result and full mutation gates.

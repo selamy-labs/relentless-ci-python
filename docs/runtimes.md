@@ -14,8 +14,7 @@ The [developer guide](https://devguide.python.org/versions/) at commit
 uses the primary release-cycle API. The pinned guide identifies the review's
 source context; the saved API digest binds the actual dates used by this gate.
 A matching digest proves local consistency, not that a contributor's changed
-snapshot came from upstream. Protected review and the App-owned issuer check
-guard changes to the snapshot.
+snapshot came from upstream. Protected review guards changes to the snapshot.
 
 Run `python -m quality.runtime_support_main` in the locked development environment.
 The full local command and each installed-behavior job require this check.

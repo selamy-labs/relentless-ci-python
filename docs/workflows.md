@@ -23,9 +23,8 @@ vulnerability checks are outside this gate's verified scope. Consult
 Fix reported workflow or shell defects, then rerun the full command. Contributor
 ignore files and inline Zizmor ignores cannot substitute for a clean result.
 The native credential audit flags implicit persistence but accepts an explicit
-`persist-credentials: true` as intentional. The checked-in workflow uses `false`;
-the protected App-owned issuer guards changes to that policy. See the
-[credential audit](https://docs.zizmor.sh/audits/#artipacked).
+`persist-credentials: true` as intentional. The checked-in workflow uses `false`.
+See the [credential audit](https://docs.zizmor.sh/audits/#artipacked).
 
 The checked-in workflow runs the same complete local command, including full
 mutation, on Linux for Python 3.11, 3.12, 3.13 and 3.14. All four versions also
@@ -40,11 +39,11 @@ results. Failed, skipped, cancelled or missing results fail its shell check.
 Analysis receipts are retained for seven days even on failure. Daily main runs
 repeat the checks to detect newly disclosed dependency vulnerabilities.
 
-The source repository's protected branch requires the aggregate `Relentless CI gate` from the GitHub Actions App and a separately issued `Relentless trusted policy` check from the dedicated App. The latter rereads native run, review and
-source-bound rationale state before publishing a decision. The `CODEOWNERS` file
-assigns the whole repository, including `.github`, to two administrators.
-Generated copies must configure and read back their own protection settings;
-the checked-in workflow alone does not establish live enforcement.
+The source repository's protected branch requires the aggregate `Relentless CI gate`
+from the GitHub Actions App. The `CODEOWNERS` file assigns the whole repository,
+including `.github`, to two administrators. Generated copies must configure and
+read back their own protection settings; the checked-in workflow alone does not
+establish live enforcement.
 
 The offline [runtime-support gate](runtimes.md) also requires both Python
 matrices and package metadata to match a current reviewed upstream snapshot.
