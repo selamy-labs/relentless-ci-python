@@ -1,5 +1,6 @@
 """Retain actual pytest streams and signed status inside the native trial output."""
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -7,6 +8,7 @@ from pathlib import Path
 from typing import TypedDict
 
 COVERAGE = ".quality-results/mutation-coverage.json"
+PRISTINE = ".quality-results/mutation-pristine.json"
 
 
 class Coverage(TypedDict):
@@ -19,12 +21,7 @@ class Coverage(TypedDict):
 
 def run_trial() -> int:
     """The native Cosmic Ray deadline still bounds this whole process group."""
-    result = subprocess.run(
-        [sys.executable, "-m", "pytest", "-x", "-q", "--color=no", *selected()],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    result = pytest(selected())
     print(
         json.dumps(
             {
@@ -37,6 +34,19 @@ def run_trial() -> int:
     if result.stderr:
         return 2
     return result.returncode
+
+
+def command(tests: list[str]) -> list[str]:
+    return [sys.executable, "-m", "pytest", "-x", "-q", "--color=no", *tests]
+
+
+def pytest(tests: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        command(tests),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
 
 def selected() -> list[str]:
@@ -52,7 +62,50 @@ def selected() -> list[str]:
     if len(changed) != 1:
         return []
     (name,) = changed
-    return covering(data, name)
+    return validated(data, name, covering(data, name))
+
+
+def validated(data: Coverage, name: str, tests: list[str]) -> list[str]:
+    """A narrowed command earns credit only if it also passes on pristine sources."""
+    if tests and pristine_passes(data, name, tests):
+        return tests
+    return []
+
+
+def pristine_passes(data: Coverage, name: str, tests: list[str]) -> bool:
+    """Cache by the exact pristine sources and the exact selected command."""
+    encoded = json.dumps([data["sources"], command(tests)]).encode("utf-8")
+    key = hashlib.sha256(encoded).hexdigest()
+    cache = read_pristine()
+    if key not in cache:
+        cache[key] = pristine_run(data, name, tests)
+        temporary = Path(PRISTINE + ".tmp")
+        temporary.write_text(json.dumps(cache), encoding="utf-8")
+        temporary.replace(PRISTINE)
+    return cache[key]
+
+
+def read_pristine() -> dict[str, bool]:
+    """A missing or unreadable cache is re-established, never trusted."""
+    try:
+        value: dict[str, bool] = json.loads(Path(PRISTINE).read_text("utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return value
+
+
+def pristine_run(data: Coverage, name: str, tests: list[str]) -> bool:
+    """Run the same selection on the restored module, then put the mutant back."""
+    path = Path(name)
+    mutated = path.read_bytes()
+    path.write_text(data["sources"][name], encoding="utf-8")
+    try:
+        result = pytest(tests)
+    except OSError:
+        return False
+    finally:
+        path.write_bytes(mutated)
+    return not result.returncode and not result.stderr
 
 
 def covering(data: Coverage, name: str) -> list[str]:

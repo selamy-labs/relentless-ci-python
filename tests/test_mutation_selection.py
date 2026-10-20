@@ -34,9 +34,21 @@ def workspace(root: Path, lines: dict[str, list[int]]) -> None:
     (root / ".quality-results/mutation-coverage.json").write_text(json.dumps(data))
 
 
+def pristine_only(
+    command: list[str], **_options: bool
+) -> subprocess.CompletedProcess[str]:
+    status = int(Path("src/item.py").read_text(encoding="utf-8") != SOURCE)
+    return subprocess.CompletedProcess(command, status, "", "")
+
+
+def forbidden(*_args: object, **_kwargs: object) -> None:
+    pytest.fail("a full-suite fallback needs no pristine selection run")
+
+
 @pytest.fixture
 def mapped(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(subprocess, "run", pristine_only)
     workspace(tmp_path, {"2": [2, 0], "3": [1], "4": [0]})
     return tmp_path
 
@@ -74,6 +86,7 @@ def test_any_unmapped_changed_line_selects_every_test(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, replacement: tuple[str, str]
 ) -> None:
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(subprocess, "run", forbidden)
     workspace(tmp_path, {"2": [0], "3": [1]})
     (tmp_path / "src/item.py").write_text(SOURCE.replace(*replacement))
     assert selected() == []
@@ -100,13 +113,12 @@ def test_trial_appends_selected_tests_to_the_unchanged_command(
         command: list[str], **_options: bool
     ) -> subprocess.CompletedProcess[str]:
         commands.append(command)
-        return subprocess.CompletedProcess(command, 1, "", "")
+        return pristine_only(command)
 
     monkeypatch.setattr(subprocess, "run", completed)
     assert mutation_trial.run_trial() == 1
-    assert commands == [
-        [sys.executable, "-m", "pytest", "-x", "-q", "--color=no", TESTS[1]]
-    ]
+    narrowed = [sys.executable, "-m", "pytest", "-x", "-q", "--color=no", TESTS[1]]
+    assert commands == [narrowed, narrowed]
     capsys.readouterr()
 
 
