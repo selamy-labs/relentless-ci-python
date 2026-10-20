@@ -28,6 +28,7 @@ def trial_source(root: Path) -> None:
     (root / "quality/mutation_trial.py").write_bytes(b"native launcher\n")
     (root / ".quality-results").mkdir(exist_ok=True)
     (root / ".quality-results/mutation-coverage.json").write_bytes(b"{}")
+    (root / ".quality-results/mutation-pristine.json").write_bytes(b"[]")
 
 
 def test_native_handler_and_coordinator_bind_pinned_sdk(
@@ -116,7 +117,9 @@ def test_completed_requests_are_journaled_without_response_changes(
     ]
 
 
-@pytest.mark.parametrize("name", ["mutation-trial.py", "mutation-coverage.json"])
+@pytest.mark.parametrize(
+    "name", ["mutation-trial.py", "mutation-coverage.json", "mutation-pristine.json"]
+)
 @pytest.mark.parametrize("timing", ["before", "after"])
 @pytest.mark.parametrize("damage", ["changed", "missing"])
 def test_launcher_damage_stops_requests_before_journal_credit(

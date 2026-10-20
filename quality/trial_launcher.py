@@ -13,10 +13,19 @@ def coverage_path(root: Path) -> Path:
     return root / ".quality-results" / "mutation-coverage.json"
 
 
-def require_coverage(root: Path, expected: bytes) -> None:
-    """Trials may not change the test selection used by later mutants."""
-    if coverage_path(root).read_bytes() != expected:
-        raise ValueError("mutation coverage map changed")
+def pristine_path(root: Path) -> Path:
+    """Selections the coordinator validated on pristine sources before any mutant."""
+    return root / ".quality-results" / "mutation-pristine.json"
+
+
+def selection_paths(root: Path) -> tuple[Path, Path]:
+    return coverage_path(root), pristine_path(root)
+
+
+def require_selection(root: Path, expected: list[bytes]) -> None:
+    """Trials may not change the selection or pristine credit of later mutants."""
+    if [path.read_bytes() for path in selection_paths(root)] != expected:
+        raise ValueError("mutation selection inputs changed")
 
 
 def prepare_launcher(root: Path) -> bytes:

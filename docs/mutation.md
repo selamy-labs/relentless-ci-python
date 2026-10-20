@@ -49,21 +49,31 @@ the complete suite because nothing has changed.
 
 A narrowed command can still fail for reasons unrelated to the mutant: a test
 that inspects the pytest session, collection or fixture context may fail when
-only part of the suite is collected. Before a selection can earn credit, the
-trial therefore writes the pristine text of the changed module back, runs that
-exact narrowed command, and restores the mutant bytes, even after an exception.
-Only pytest status 0 with empty stderr validates the selection. The result is
-cached in the worker's `.quality-results/mutation-pristine.json`, keyed by the
-SHA-256 of the pristine sources from the coverage map plus the exact command,
-so each distinct selection runs on pristine code at most once per worker. A
-failing, erroring or unlaunchable pristine run falls back to the exact
-full-suite command for that mutant. A missing or unreadable cache is never
-trusted; it is re-established by a fresh pristine run. Pristine runs share the native 60-second trial limit;
-reaching it is a timeout, never a kill. `tests/test_mutation_pristine.py`
-reproduces a session-inventory test whose selected subset "kills" an equivalent
-`1 + 0` to `1 - 0` mutant through native Cosmic Ray, and proves that the mutant
-now survives through the full-suite fallback while an ordinary selected kill
-still counts.
+only part of the suite is collected. A selection therefore earns credit only if
+that exact narrowed command already passed on pristine sources. After the
+baseline and before any worker starts, the coordinator applies every planned
+mutation in memory with the pinned Cosmic Ray `mutate_code`, computes the
+selection the trial would compute, and runs each distinct selection once in
+`.quality-results/mutation-pristine-N`, fresh owned copies of the pristine
+inputs, sharded over the worker count. Only pytest status 0 with empty stderr
+within the native 60-second trial limit validates a selection; a failure,
+diagnostic, timeout or unlaunchable run leaves it out. The copies must keep
+their inputs unchanged. The coordinator alone writes the sorted list of
+validated selections to `.quality-results/mutation-pristine.json`.
+
+Trials never run pristine commands and never write this file. Each worker
+receives a byte copy, and every request verifies it before and after native
+execution together with the coverage map, so a trial or test under a mutant
+that forges or alters credit fails that request and every later one without a
+journal entry. A selection the trial computes but cannot find in the list, a
+missing or malformed list, or a list in any other shape runs the exact
+full-suite command, where an undetected mutant remains a survivor.
+`tests/test_mutation_pristine.py` reproduces a session-inventory test whose
+selected subset "kills" an equivalent `1 + 0` to `1 - 0` mutant through native
+Cosmic Ray, proves that the mutant survives through the full-suite fallback,
+that a forged entry in the format the earlier trial-written cache trusted no
+longer restores that false kill, that a worker rejects a trial that rewrites the
+established list, and that an ordinary established selection still kills.
 
 The adapter retains pytest stdout, stderr and its signed exit status in a fresh
 JSON record inside the native result. The native trial limit is 60 seconds.

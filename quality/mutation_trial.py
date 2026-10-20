@@ -1,11 +1,10 @@
 """Retain actual pytest streams and signed status inside the native trial output."""
 
-import hashlib
 import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, TypeGuard
 
 COVERAGE = ".quality-results/mutation-coverage.json"
 PRISTINE = ".quality-results/mutation-pristine.json"
@@ -62,55 +61,33 @@ def selected() -> list[str]:
     if len(changed) != 1:
         return []
     (name,) = changed
-    return validated(data, name, covering(data, name))
+    return validated(covering(data, name, Path(name).read_text(encoding="utf-8")))
 
 
-def validated(data: Coverage, name: str, tests: list[str]) -> list[str]:
-    """A narrowed command earns credit only if it also passes on pristine sources."""
-    if tests and pristine_passes(data, name, tests):
+def validated(tests: list[str]) -> list[str]:
+    """Only selections the coordinator passed on pristine sources earn credit."""
+    if tests in established():
         return tests
     return []
 
 
-def pristine_passes(data: Coverage, name: str, tests: list[str]) -> bool:
-    """Cache by the exact pristine sources and the exact selected command."""
-    encoded = json.dumps([data["sources"], command(tests)]).encode("utf-8")
-    key = hashlib.sha256(encoded).hexdigest()
-    cache = read_pristine()
-    if key not in cache:
-        cache[key] = pristine_run(data, name, tests)
-        temporary = Path(PRISTINE + ".tmp")
-        temporary.write_text(json.dumps(cache), encoding="utf-8")
-        temporary.replace(PRISTINE)
-    return cache[key]
-
-
-def read_pristine() -> dict[str, bool]:
-    """A missing or unreadable cache is re-established, never trusted."""
+def established() -> list[object]:
+    """Trials only read this bound copy; missing or malformed input runs all."""
     try:
-        value: dict[str, bool] = json.loads(Path(PRISTINE).read_text("utf-8"))
+        value: object = json.loads(Path(PRISTINE).read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return {}
-    return value
+        return []
+    if listed(value):
+        return value
+    return []
 
 
-def pristine_run(data: Coverage, name: str, tests: list[str]) -> bool:
-    """Run the same selection on the restored module, then put the mutant back."""
-    path = Path(name)
-    mutated = path.read_bytes()
-    path.write_text(data["sources"][name], encoding="utf-8")
-    try:
-        result = pytest(tests)
-    except OSError:
-        return False
-    finally:
-        path.write_bytes(mutated)
-    return not result.returncode and not result.stderr
+def listed(value: object) -> TypeGuard[list[object]]:
+    return isinstance(value, list)
 
 
-def covering(data: Coverage, name: str) -> list[str]:
+def covering(data: Coverage, name: str, current: str) -> list[str]:
     """Union the recorded test functions of every changed original line."""
-    current = Path(name).read_text(encoding="utf-8")
     lines = [str(line) for line in changed_lines(data["sources"][name], current)]
     mapped = data["lines"][name]
     if not all(line in mapped for line in lines):

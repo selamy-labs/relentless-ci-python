@@ -52,6 +52,7 @@ def test_launch_copies_inputs_and_binds_own_environment(
     monkeypatch.setattr(services, "start_owned", launch)
     (tmp_path / ".quality-results").mkdir(exist_ok=preexisting)
     (tmp_path / ".quality-results/mutation-coverage.json").write_text("{}")
+    (tmp_path / ".quality-results/mutation-pristine.json").write_text("[]")
     inherited = {
         "KEEP": "value",
         "PYTHONPATH": "foreign",
@@ -68,6 +69,7 @@ def test_launch_copies_inputs_and_binds_own_environment(
     )
     assert worker.root == target
     assert (target / ".quality-results/mutation-coverage.json").read_text() == "{}"
+    assert (target / ".quality-results/mutation-pristine.json").read_text() == "[]"
     assert worker.owned is launch.return_value
     assert inherited == {
         "KEEP": "value",

@@ -13,10 +13,10 @@ from aiohttp import web
 
 from quality.report_data import record, text
 from quality.trial_launcher import (
-    coverage_path,
     prepare_launcher,
-    require_coverage,
     require_launcher,
+    require_selection,
+    selection_paths,
 )
 
 Handler = Callable[[web.Request], Awaitable[web.StreamResponse]]
@@ -55,14 +55,14 @@ def journal_handler(root: Path, handler: Handler) -> Handler:
     """Retain native requests after completion without changing SDK responses."""
 
     expected = prepare_launcher(root)
-    selection = coverage_path(root).read_bytes()
+    selection = [path.read_bytes() for path in selection_paths(root)]
 
     async def handle(request: web.Request) -> web.StreamResponse:
         require_launcher(root, expected)
-        require_coverage(root, selection)
+        require_selection(root, selection)
         response = await handler(request)
         require_launcher(root, expected)
-        require_coverage(root, selection)
+        require_selection(root, selection)
         value: object = await request.json()
         with (root / ".quality-results" / "worker-jobs.jsonl").open(
             "a", encoding="utf-8"

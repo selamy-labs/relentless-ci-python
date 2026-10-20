@@ -12,7 +12,7 @@ from hypothesis import strategies as st
 
 from quality import mutation_trial
 from quality.mutation_trial import Coverage, changed_lines, covering, selected
-from quality.trial_launcher import require_coverage
+from quality.trial_launcher import require_selection
 
 SOURCE = "def answer():\n    first = 1\n    second = 2\n    return first + second\n"
 TESTS = ["tests/a.py::test_zero", "tests/b.py::test_one", "tests/b.py::Kind::test_two"]
@@ -34,23 +34,30 @@ def workspace(root: Path, lines: dict[str, list[int]]) -> None:
     (root / ".quality-results/mutation-coverage.json").write_text(json.dumps(data))
 
 
-def pristine_only(
-    command: list[str], **_options: bool
-) -> subprocess.CompletedProcess[str]:
-    status = int(Path("src/item.py").read_text(encoding="utf-8") != SOURCE)
-    return subprocess.CompletedProcess(command, status, "", "")
+ESTABLISHED = [[TESTS[1]], [TESTS[0], TESTS[2]], TESTS]
+
+
+def establish(root: Path, selections: object) -> None:
+    path = root / ".quality-results/mutation-pristine.json"
+    path.write_text(json.dumps(selections), encoding="utf-8")
 
 
 def forbidden(*_args: object, **_kwargs: object) -> None:
-    pytest.fail("a full-suite fallback needs no pristine selection run")
+    pytest.fail("a trial never runs a pristine selection itself")
+
+
+def mapped_workspace(root: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Trials never run subprocesses for selection, so any call fails the test."""
+    monkeypatch.chdir(root)
+    monkeypatch.setattr(subprocess, "run", forbidden)
+    workspace(root, {"2": [2, 0], "3": [1], "4": [0]})
+    establish(root, ESTABLISHED)
+    return root
 
 
 @pytest.fixture
 def mapped(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(subprocess, "run", pristine_only)
-    workspace(tmp_path, {"2": [2, 0], "3": [1], "4": [0]})
-    return tmp_path
+    return mapped_workspace(tmp_path, monkeypatch)
 
 
 def test_missing_map_or_unchanged_sources_select_every_test(
@@ -88,6 +95,7 @@ def test_any_unmapped_changed_line_selects_every_test(
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(subprocess, "run", forbidden)
     workspace(tmp_path, {"2": [0], "3": [1]})
+    establish(tmp_path, ESTABLISHED)
     (tmp_path / "src/item.py").write_text(SOURCE.replace(*replacement))
     assert selected() == []
 
@@ -113,12 +121,12 @@ def test_trial_appends_selected_tests_to_the_unchanged_command(
         command: list[str], **_options: bool
     ) -> subprocess.CompletedProcess[str]:
         commands.append(command)
-        return pristine_only(command)
+        return subprocess.CompletedProcess(command, 1, "", "")
 
     monkeypatch.setattr(subprocess, "run", completed)
     assert mutation_trial.run_trial() == 1
     narrowed = [sys.executable, "-m", "pytest", "-x", "-q", "--color=no", TESTS[1]]
-    assert commands == [narrowed, narrowed]
+    assert commands == [narrowed]
     capsys.readouterr()
 
 
@@ -166,13 +174,12 @@ def test_selection_is_the_mapped_union_or_the_full_suite(
     changed[line - 1] = "mutated"
     with TemporaryDirectory() as directory:
         name = str(Path(directory) / "item.py")
-        Path(name).write_text("\n".join(changed), encoding="utf-8")
         data: Coverage = {
             "tests": TESTS,
             "sources": {name: "\n".join(original)},
             "lines": {name: {str(k): v for k, v in mapping.items()}},
         }
-        result = covering(data, name)
+        result = covering(data, name, "\n".join(changed))
     assert result == [TESTS[index] for index in sorted(set(mapping.get(line, [])))]
 
 
@@ -183,14 +190,15 @@ def test_long_sources_compare_line_counts_by_value() -> None:
     assert changed_lines(before, after + "extra\n") == []
 
 
+@pytest.mark.parametrize("name", ["mutation-coverage.json", "mutation-pristine.json"])
 @pytest.mark.parametrize("replacement", [b"{ }", b"{", b"{}{}", b"[]", b"|}"])
-def test_any_coverage_map_change_is_rejected(
-    tmp_path: Path, replacement: bytes
+def test_any_selection_input_change_is_rejected(
+    tmp_path: Path, replacement: bytes, name: str
 ) -> None:
-    path = tmp_path / ".quality-results/mutation-coverage.json"
-    path.parent.mkdir()
-    path.write_bytes(b"{}")
-    require_coverage(tmp_path, b"{}")
-    path.write_bytes(replacement)
-    with pytest.raises(ValueError, match="coverage map changed"):
-        require_coverage(tmp_path, b"{}")
+    (tmp_path / ".quality-results").mkdir()
+    for path in ("mutation-coverage.json", "mutation-pristine.json"):
+        (tmp_path / ".quality-results" / path).write_bytes(b"{}")
+    require_selection(tmp_path, [b"{}", b"{}"])
+    (tmp_path / ".quality-results" / name).write_bytes(replacement)
+    with pytest.raises(ValueError, match="selection inputs changed"):
+        require_selection(tmp_path, [b"{}", b"{}"])
