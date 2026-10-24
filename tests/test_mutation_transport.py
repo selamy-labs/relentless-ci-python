@@ -26,6 +26,9 @@ async def run_handler(value: Awaitable[web.StreamResponse]) -> web.StreamRespons
 def trial_source(root: Path) -> None:
     (root / "quality").mkdir()
     (root / "quality/mutation_trial.py").write_bytes(b"native launcher\n")
+    (root / ".quality-results").mkdir(exist_ok=True)
+    (root / ".quality-results/mutation-coverage.json").write_bytes(b"{}")
+    (root / ".quality-results/mutation-pristine.json").write_bytes(b"[]")
 
 
 def test_native_handler_and_coordinator_bind_pinned_sdk(
@@ -99,7 +102,6 @@ def test_malformed_stop_is_never_accepted(
 def test_completed_requests_are_journaled_without_response_changes(
     tmp_path: Path,
 ) -> None:
-    (tmp_path / ".quality-results").mkdir()
     trial_source(tmp_path)
     response = web.Response(status=200)
     handler = AsyncMock(return_value=response)
@@ -115,13 +117,16 @@ def test_completed_requests_are_journaled_without_response_changes(
     ]
 
 
+@pytest.mark.parametrize(
+    "name", ["mutation-trial.py", "mutation-coverage.json", "mutation-pristine.json"]
+)
 @pytest.mark.parametrize("timing", ["before", "after"])
 @pytest.mark.parametrize("damage", ["changed", "missing"])
 def test_launcher_damage_stops_requests_before_journal_credit(
-    tmp_path: Path, timing: str, damage: str
+    tmp_path: Path, timing: str, damage: str, name: str
 ) -> None:
     trial_source(tmp_path)
-    launcher = tmp_path / ".quality-results/mutation-trial.py"
+    launcher = tmp_path / ".quality-results" / name
 
     def corrupt() -> None:
         if damage == "missing":
@@ -148,13 +153,10 @@ def test_launcher_damage_stops_requests_before_journal_credit(
 
 
 @pytest.mark.parametrize("fails", [False, True])
-@pytest.mark.parametrize("preexisting", [False, True])
 def test_readiness_follows_listener_and_always_cleans_runner(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fails: bool, preexisting: bool
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fails: bool
 ) -> None:
     trial_source(tmp_path)
-    if preexisting:
-        (tmp_path / ".quality-results").mkdir()
     application = MagicMock()
     runner = MagicMock(setup=AsyncMock(), cleanup=AsyncMock())
     site = MagicMock(start=AsyncMock())

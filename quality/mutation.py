@@ -5,11 +5,13 @@ import shutil
 from pathlib import Path
 
 from quality.deadline import read_deadline
+from quality.mutation_coverage import collect
 from quality.mutation_inputs import copy_inputs as copy_inputs
 from quality.mutation_inputs import environment
 from quality.mutation_inputs import snapshot as snapshot
 from quality.mutation_journal import verify_journals
 from quality.mutation_pool import execute_pool
+from quality.mutation_pristine import establish
 from quality.mutation_report import verify_session
 from quality.mutation_workspace import workspace
 from quality.owned_commands import run_owned
@@ -26,12 +28,15 @@ def mutate(root: Path, timeout: float) -> int:
         copy_inputs(root, target)
         prepare_launcher(target)
         env = environment(target, dict(os.environ))
-        commands = (
+        run(
             ["cosmic-ray", "init", "cosmic-ray.toml", "mutation.sqlite"],
-            ["cosmic-ray", "baseline", "cosmic-ray.toml"],
+            target,
+            timeout,
+            env,
         )
-        for command in commands:
-            run(command, target, timeout, env)
+        collect(target, timeout, env)
+        run(["cosmic-ray", "baseline", "cosmic-ray.toml"], target, timeout, env)
+        establish(target, timeout, env)
         workers = execute_pool(target, execution_timeout, env)
         verify_journals(target, workers)
         output = root / ".quality-results"

@@ -28,6 +28,9 @@ jobs:
       fail-fast: false
       matrix:
         python: ["3.11", "3.12", "3.13", "3.14"]
+        include:
+          - python: "3.14"
+            mutation: true
     env:
       UV_PYTHON: ${{ matrix.python }}
       UV_PYTHON_DOWNLOADS: never
@@ -48,7 +51,11 @@ jobs:
           env: false
           github_token: ""
       - name: Full local command, including every mutant
+        if: ${{ matrix.mutation }}
         run: mise --yes --locked exec -- uv run --locked --group dev python -m quality.verify
+      - name: Every gate of the full local command except mutation
+        if: ${{ !matrix.mutation }}
+        run: mise --yes --locked exec -- uv run --locked --group dev python -m quality.analysis_main
       - name: Retain raw verification receipts
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

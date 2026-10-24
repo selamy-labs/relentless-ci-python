@@ -14,10 +14,69 @@ Worker requests verify its bytes before and after native execution; stale copies
 are replaced, and missing or changed copies fail. The reproduction command is
 `python -c 'from pathlib import Path; from quality.trial_launcher import prepare_launcher; prepare_launcher(Path.cwd())'`.
 
-The launcher runs exactly `python -m pytest -x -q --color=no`.
-The adapter retains pytest stdout, stderr and
-its signed exit status in a fresh JSON record inside the native result. It does
-not select tests or change operators. The native trial limit is 60 seconds.
+The launcher runs `python -m pytest -x -q --color=no`, optionally followed by
+selected test function ids. Before the baseline, the coordinator runs the whole
+suite once with `--cov --cov-context=test` and writes
+`.quality-results/mutation-coverage.json`: the pristine text of every `src` and
+`quality` module and, for each line inside a function body, the test functions
+whose execution reached any line of the innermost enclosing statement. Lines in
+signatures, decorators, class or module bodies, lines executed during import or
+collection, and lines no test executed stay unmapped. The enrolled
+`quality.mutation_context` plugin exports `COVERAGE_PROCESS_START` and the
+current test id during each test, so Python subprocesses that inherit the
+environment are measured with that test's context and native subprocess tests
+remain selectable. A subprocess started with a scrubbed environment is not
+measured; a mutant killed only there would survive and fail the gate rather
+than pass. The map run forces `COVERAGE_CORE=ctrace` because the Python 3.14
+default `sysmon` core drops per-test contexts. Coverage startup slows each
+measured child by about 0.1 seconds, which can trip sub-second native timing
+tests, so the map run accepts pytest's tests-failed status 1 and keeps the
+contexts recorded before that failure. Any other status or a timeout still
+fails, and the owned supervisor still reaps every descendant. A shortened context can only drop tests from a selection,
+which may create a survivor but never a kill. The ordinary test gate and the
+complete baseline still require every test to pass. Each worker receives a
+byte copy, and every request verifies those bytes before and after native
+execution, exactly like the launcher.
+
+A trial compares the workspace with the pristine sources. Only one changed
+module whose changed lines keep the original line count and are all mapped
+narrows the command to the union of their covering test functions, in the
+unchanged conftest order. No map, no change, several changed modules, added or
+removed lines, or any unmapped line runs the complete suite. Selection never
+changes operators, the mutant plan or result validation, and a mutant that no
+selected test kills is still a survivor. The `cosmic-ray baseline` still runs
+the complete suite because nothing has changed.
+
+A narrowed command can still fail for reasons unrelated to the mutant: a test
+that inspects the pytest session, collection or fixture context may fail when
+only part of the suite is collected. A selection therefore earns credit only if
+that exact narrowed command already passed on pristine sources. After the
+baseline and before any worker starts, the coordinator applies every planned
+mutation in memory with the pinned Cosmic Ray `mutate_code`, computes the
+selection the trial would compute, and runs each distinct selection once in
+`.quality-results/mutation-pristine-N`, fresh owned copies of the pristine
+inputs, sharded over the worker count. Only pytest status 0 with empty stderr
+within the native 60-second trial limit validates a selection; a failure,
+diagnostic, timeout or unlaunchable run leaves it out. The copies must keep
+their inputs unchanged. The coordinator alone writes the sorted list of
+validated selections to `.quality-results/mutation-pristine.json`.
+
+Trials never run pristine commands and never write this file. Each worker
+receives a byte copy, and every request verifies it before and after native
+execution together with the coverage map, so a trial or test under a mutant
+that forges or alters credit fails that request and every later one without a
+journal entry. A selection the trial computes but cannot find in the list, a
+missing or malformed list, or a list in any other shape runs the exact
+full-suite command, where an undetected mutant remains a survivor.
+`tests/test_mutation_pristine.py` reproduces a session-inventory test whose
+selected subset "kills" an equivalent `1 + 0` to `1 - 0` mutant through native
+Cosmic Ray, proves that the mutant survives through the full-suite fallback,
+that a forged entry in the format the earlier trial-written cache trusted no
+longer restores that false kill, that a worker rejects a trial that rewrites the
+established list, and that an ordinary established selection still kills.
+
+The adapter retains pytest stdout, stderr and its signed exit status in a fresh
+JSON record inside the native result. The native trial limit is 60 seconds.
 Credit requires actual pytest status 1, empty stderr, a completed `FAILED tests/`
 record and the exact one-failure summary. Signals, arbitrary nonzero exits,
 runtime diagnostics, duplicate JSON keys and missing or malformed records fail.
@@ -90,6 +149,15 @@ trials without changing source scope, operators, or kill classification.
 
 This historical note is retained as a changelog-style record of a removed
 trusted-policy bootstrap candidate; the issuer itself has been removed.
+
+Hosted CI runs this mutation phase once, inside the Python 3.14 full-analysis
+job; Python 3.11, 3.12 and 3.13 run every other gate through
+`python -m quality.analysis_main`. Before this change each of the four jobs
+repeated the identical mutant plan for about 3.5 to 4 hours. The plan, operators,
+kill requirement and receipts are unchanged. A mutant that only an older
+runtime's behavior would kill is therefore not checked there; 100% line and
+branch coverage and the whole test suite still run on every declared version.
+The aggregate gate requires the 3.14 job, so mutation still blocks merges.
 
 Run the same full local verifier described in the README. It requires no paid
 service or account credentials for mutation analysis. Hosted matrix enforcement

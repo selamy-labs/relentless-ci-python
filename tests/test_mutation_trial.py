@@ -17,11 +17,14 @@ FAILURE = "FAILED tests/x.py::test_x\n1 failed in 0.12s\n"
 @pytest.mark.parametrize("status", [0, 1, 2, -9])
 @pytest.mark.parametrize("stderr", ["", "runtime diagnostic\n"])
 def test_trial_retains_actual_signed_status_and_both_streams(
+    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
     status: int,
     stderr: str,
 ) -> None:
+    monkeypatch.chdir(tmp_path)
+
     def completed(
         command: list[str], *, capture_output: bool, text: bool, check: bool
     ) -> subprocess.CompletedProcess[str]:
@@ -69,6 +72,8 @@ def test_trial_launch_error_cannot_emit_a_completed_record(
 def test_trial_entry_propagates_exact_adapter_status(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, status: int
 ) -> None:
+    monkeypatch.chdir(tmp_path)
+
     def completed(
         command: list[str], **_options: bool
     ) -> subprocess.CompletedProcess[str]:

@@ -8,6 +8,26 @@ def launcher_path(root: Path) -> Path:
     return root / ".quality-results" / "mutation-trial.py"
 
 
+def coverage_path(root: Path) -> Path:
+    """The trial reads this relative copy from the worker's working directory."""
+    return root / ".quality-results" / "mutation-coverage.json"
+
+
+def pristine_path(root: Path) -> Path:
+    """Selections the coordinator validated on pristine sources before any mutant."""
+    return root / ".quality-results" / "mutation-pristine.json"
+
+
+def selection_paths(root: Path) -> tuple[Path, Path]:
+    return coverage_path(root), pristine_path(root)
+
+
+def require_selection(root: Path, expected: list[bytes]) -> None:
+    """Trials may not change the selection or pristine credit of later mutants."""
+    if [path.read_bytes() for path in selection_paths(root)] != expected:
+        raise ValueError("mutation selection inputs changed")
+
+
 def prepare_launcher(root: Path) -> bytes:
     """Always replace stale launchers with the current immutable source snapshot."""
     source = (root / "quality" / "mutation_trial.py").read_bytes()
